@@ -1,18 +1,14 @@
 ﻿{
     "$schema":  "node_modules/wrangler/config-schema.json",
-    "name":  "imitation-game",
+    "name":  "imitation-game-local",
     "main":  "src/server.ts",
     "compatibility_date":  "2026-06-11",
     "compatibility_flags":  [
                                 "nodejs_compat"
                             ],
-    "ai":  {
-               "binding":  "AI",
-               "remote":  true
-           },
     "vars":  {
-                 "DEVELOPMENT":  "false",
-                 "DEV_TOKEN":  "",
+                 "DEVELOPMENT":  "true",
+                 "DEV_TOKEN":  "local-inspection-only",
                  "ADMIN_TOKEN":  "",
                  "LOCAL_ADMIN":  "false"
              },
@@ -41,22 +37,12 @@
                        {
                            "tag":  "v1",
                            "new_sqlite_classes":  [
-                                                      "ChatAgent"
-                                                  ]
-                       },
-                       {
-                           "tag":  "v2",
-                           "new_sqlite_classes":  [
                                                       "GameRoom",
                                                       "PersistentPlayer"
-                                                  ],
-                           "deleted_classes":  [
-                                                   "ChatAgent"
-                                               ]
+                                                  ]
                        }
                    ],
     "observability":  {
                           "enabled":  true
-                      },
-    "upload_source_maps":  true
+                      }
 }

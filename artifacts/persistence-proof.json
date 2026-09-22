@@ -1,0 +1,170 @@
+{
+  "roomId": "9229876f-7af5-4f3b-bb5b-ce99036a7110",
+  "agents": [
+    {
+      "agentId": 26,
+      "games": 3,
+      "strategy": {
+        "earlyAccusation": 0.43999999999999995,
+        "silence": 0.5,
+        "humor": 0.5,
+        "directQuestions": 0.5,
+        "followUpQuestions": 0.5,
+        "personalStories": 0.5
+      },
+      "episodes": [
+        {
+          "room": "bbe9ca49-423a-4bfd-9e23-410a6607f7e6",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790045757170
+        },
+        {
+          "room": "a3e4882f-926c-4e48-aa2a-2d1ae195d157",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790046386818
+        },
+        {
+          "room": "9229876f-7af5-4f3b-bb5b-ce99036a7110",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790046401726
+        }
+      ]
+    },
+    {
+      "agentId": 63,
+      "games": 3,
+      "strategy": {
+        "earlyAccusation": 0.43999999999999995,
+        "silence": 0.5,
+        "humor": 0.5,
+        "directQuestions": 0.5,
+        "followUpQuestions": 0.5,
+        "personalStories": 0.5
+      },
+      "episodes": [
+        {
+          "room": "bbe9ca49-423a-4bfd-9e23-410a6607f7e6",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790045757171
+        },
+        {
+          "room": "cd62d0f7-f267-42fa-b1d0-071884bfbf57",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790045815338
+        },
+        {
+          "room": "9229876f-7af5-4f3b-bb5b-ce99036a7110",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790046401727
+        }
+      ]
+    },
+    {
+      "agentId": 9,
+      "games": 3,
+      "strategy": {
+        "earlyAccusation": 0.43999999999999995,
+        "silence": 0.5,
+        "humor": 0.5,
+        "directQuestions": 0.5,
+        "followUpQuestions": 0.5,
+        "personalStories": 0.5
+      },
+      "episodes": [
+        {
+          "room": "bbe9ca49-423a-4bfd-9e23-410a6607f7e6",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790045757170
+        },
+        {
+          "room": "9229876f-7af5-4f3b-bb5b-ce99036a7110",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790046401727
+        },
+        {
+          "room": "0b93eea9-dafc-43ed-abb8-04bd3980a728",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790046405499
+        }
+      ]
+    },
+    {
+      "agentId": 88,
+      "games": 5,
+      "strategy": {
+        "earlyAccusation": 0.3999999999999999,
+        "silence": 0.5,
+        "humor": 0.5,
+        "directQuestions": 0.5,
+        "followUpQuestions": 0.5,
+        "personalStories": 0.5
+      },
+      "episodes": [
+        {
+          "room": "bbe9ca49-423a-4bfd-9e23-410a6607f7e6",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790045757171
+        },
+        {
+          "room": "bd70876d-025a-4511-ad2e-22c8e2e3d5fe",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790045761034
+        },
+        {
+          "room": "cd62d0f7-f267-42fa-b1d0-071884bfbf57",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790045815338
+        },
+        {
+          "room": "9229876f-7af5-4f3b-bb5b-ce99036a7110",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790046401727
+        },
+        {
+          "room": "0b93eea9-dafc-43ed-abb8-04bd3980a728",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790046405499
+        }
+      ]
+    },
+    {
+      "agentId": 17,
+      "games": 5,
+      "strategy": {
+        "earlyAccusation": 0.3999999999999999,
+        "silence": 0.5,
+        "humor": 0.5,
+        "directQuestions": 0.5,
+        "followUpQuestions": 0.5,
+        "personalStories": 0.5
+      },
+      "episodes": [
+        {
+          "room": "bbe9ca49-423a-4bfd-9e23-410a6607f7e6",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790045757171
+        },
+        {
+          "room": "bd70876d-025a-4511-ad2e-22c8e2e3d5fe",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790045761034
+        },
+        {
+          "room": "a3e4882f-926c-4e48-aa2a-2d1ae195d157",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790046386818
+        },
+        {
+          "room": "9229876f-7af5-4f3b-bb5b-ce99036a7110",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790046401727
+        },
+        {
+          "room": "0b93eea9-dafc-43ed-abb8-04bd3980a728",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790046405499
+        }
+      ]
+    }
+  ]
+}

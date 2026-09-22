@@ -1,979 +1,924 @@
-import { Suspense, useCallback, useState, useEffect, useRef } from "react";
-import { useAgent } from "agents/react";
-import { useAgentChat } from "@cloudflare/ai-chat/react";
-import { getToolName, isToolUIPart, type UIMessage } from "ai";
-import type { MCPServersState } from "agents";
-import type { ChatAgent } from "./server";
-import {
-  Badge,
-  Button,
-  Empty,
-  InputArea,
-  PoweredByCloudflare,
-  Surface,
-  Switch,
-  Text
-} from "@cloudflare/kumo";
-import { Toasty, useKumoToastManager } from "@cloudflare/kumo/components/toast";
-import { Streamdown } from "streamdown";
-import { code } from "@streamdown/code";
-import {
-  PaperPlaneRightIcon,
-  StopIcon,
-  TrashIcon,
-  GearIcon,
-  ChatCircleDotsIcon,
-  CircleIcon,
-  MoonIcon,
-  SunIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  BrainIcon,
-  CaretDownIcon,
-  BugIcon,
-  PlugsConnectedIcon,
-  PlusIcon,
-  SignInIcon,
-  XIcon,
-  WrenchIcon,
-  PaperclipIcon,
-  ImageIcon
-} from "@phosphor-icons/react";
+﻿import { useEffect, useRef, useState, type FormEvent } from "react";
+import type { ClientAction, Participant, Snapshot } from "./shared";
+import { MAX_MESSAGE } from "./shared";
 
-// ── Attachment helpers ────────────────────────────────────────────────
-
-interface Attachment {
-  id: string;
-  file: File;
-  preview: string;
-  mediaType: string;
-}
-
-function createAttachment(file: File): Attachment {
-  return {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    file,
-    preview: URL.createObjectURL(file),
-    mediaType: file.type || "application/octet-stream"
-  };
-}
-
-function fileToDataUri(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-// ── Small components ──────────────────────────────────────────────────
-
-function ThemeToggle() {
-  const [dark, setDark] = useState(
-    () => document.documentElement.getAttribute("data-mode") === "dark"
-  );
-
-  const toggle = useCallback(() => {
-    const next = !dark;
-    setDark(next);
-    const mode = next ? "dark" : "light";
-    document.documentElement.setAttribute("data-mode", mode);
-    document.documentElement.style.colorScheme = mode;
-    localStorage.setItem("theme", mode);
-  }, [dark]);
-
-  return (
-    <Button
-      variant="secondary"
-      shape="square"
-      icon={dark ? <SunIcon size={16} /> : <MoonIcon size={16} />}
-      onClick={toggle}
-      aria-label="Toggle theme"
-    />
-  );
-}
-
-// ── Tool rendering ────────────────────────────────────────────────────
-
-function ToolIO({ label, value }: { label: string; value: unknown }) {
-  if (value === undefined || value === null) return null;
-  const text =
-    typeof value === "string" ? value : JSON.stringify(value, null, 2);
-  if (!text) return null;
-  return (
-    <div className="mt-1">
-      <Text size="xs" variant="secondary" bold>
-        {label}
-      </Text>
-      <pre className="mt-0.5 font-mono text-xs text-kumo-subtle whitespace-pre-wrap overflow-auto max-h-64">
-        {text}
-      </pre>
-    </div>
-  );
-}
-
-function ToolPartView({
-  part,
-  addToolApprovalResponse
+const Arrow = () => <span aria-hidden="true">↗</span>;
+const Mark = ({ home }: { home: () => void }) => (
+  <button className="wordmark" onClick={home} aria-label="HUMAN? home">
+    HUMAN<span>?</span>
+  </button>
+);
+function Avatar({
+  person,
+  large = false
 }: {
-  part: UIMessage["parts"][number];
-  addToolApprovalResponse: (response: {
-    id: string;
-    approved: boolean;
-  }) => void;
+  person: Pick<Participant, "symbol">;
+  large?: boolean;
 }) {
-  if (!isToolUIPart(part)) return null;
-  const toolName = getToolName(part);
-
-  // Completed
-  if (part.state === "output-available") {
-    return (
-      <div className="flex justify-start">
-        <Surface className="max-w-[85%] px-4 py-2.5 rounded-xl ring ring-kumo-line">
-          <div className="flex items-center gap-2 mb-1">
-            <GearIcon size={14} className="text-kumo-inactive" />
-            <Text size="xs" variant="secondary" bold>
-              {toolName}
-            </Text>
-            <Badge variant="secondary">Done</Badge>
-          </div>
-          <ToolIO label="Input" value={part.input} />
-          <ToolIO label="Output" value={part.output} />
-        </Surface>
-      </div>
-    );
-  }
-
-  // Needs approval
-  if ("approval" in part && part.state === "approval-requested") {
-    const approvalId = (part.approval as { id?: string })?.id;
-    return (
-      <div className="flex justify-start">
-        <Surface className="max-w-[85%] px-4 py-3 rounded-xl ring-2 ring-kumo-warning">
-          <div className="flex items-center gap-2 mb-2">
-            <GearIcon size={14} className="text-kumo-warning" />
-            <Text size="sm" bold>
-              Approval needed: {toolName}
-            </Text>
-          </div>
-          <div className="font-mono mb-3">
-            <Text size="xs" variant="secondary">
-              {JSON.stringify(part.input, null, 2)}
-            </Text>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="primary"
-              size="sm"
-              icon={<CheckCircleIcon size={14} />}
-              onClick={() => {
-                if (approvalId) {
-                  addToolApprovalResponse({ id: approvalId, approved: true });
-                }
-              }}
-            >
-              Approve
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              icon={<XCircleIcon size={14} />}
-              onClick={() => {
-                if (approvalId) {
-                  addToolApprovalResponse({ id: approvalId, approved: false });
-                }
-              }}
-            >
-              Reject
-            </Button>
-          </div>
-        </Surface>
-      </div>
-    );
-  }
-
-  // Rejected / denied
-  if (
-    part.state === "output-denied" ||
-    ("approval" in part &&
-      (part.approval as { approved?: boolean })?.approved === false)
-  ) {
-    return (
-      <div className="flex justify-start">
-        <Surface className="max-w-[85%] px-4 py-2.5 rounded-xl ring ring-kumo-line">
-          <div className="flex items-center gap-2">
-            <XCircleIcon size={14} className="text-kumo-danger" />
-            <Text size="xs" variant="secondary" bold>
-              {toolName}
-            </Text>
-            <Badge variant="secondary">Rejected</Badge>
-          </div>
-        </Surface>
-      </div>
-    );
-  }
-
-  // Errored
-  if (part.state === "output-error") {
-    const errorText = part.errorText;
-    return (
-      <div className="flex justify-start">
-        <Surface className="max-w-[85%] px-4 py-2.5 rounded-xl ring-2 ring-kumo-danger">
-          <div className="flex items-center gap-2 mb-1">
-            <XCircleIcon size={14} className="text-kumo-danger" />
-            <Text size="xs" variant="secondary" bold>
-              {toolName}
-            </Text>
-            <Badge variant="destructive">Error</Badge>
-          </div>
-          <div className="font-mono">
-            <Text size="xs" variant="secondary">
-              {errorText || "Tool call failed"}
-            </Text>
-          </div>
-        </Surface>
-      </div>
-    );
-  }
-
-  // Executing
-  if (part.state === "input-available" || part.state === "input-streaming") {
-    return (
-      <div className="flex justify-start">
-        <Surface className="max-w-[85%] px-4 py-2.5 rounded-xl ring ring-kumo-line">
-          <div className="flex items-center gap-2">
-            <GearIcon size={14} className="text-kumo-inactive animate-spin" />
-            <Text size="xs" variant="secondary">
-              Running {toolName}...
-            </Text>
-          </div>
-          <ToolIO label="Input" value={part.input} />
-        </Surface>
-      </div>
-    );
-  }
-
-  return null;
-}
-
-// ── Main chat ─────────────────────────────────────────────────────────
-
-function Chat() {
-  const [connected, setConnected] = useState(false);
-  const [input, setInput] = useState("");
-  const [showDebug, setShowDebug] = useState(false);
-  const [attachments, setAttachments] = useState<Attachment[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const toasts = useKumoToastManager();
-  const [mcpState, setMcpState] = useState<MCPServersState>({
-    prompts: [],
-    resources: [],
-    servers: {},
-    tools: []
-  });
-  const [showMcpPanel, setShowMcpPanel] = useState(false);
-  const [mcpName, setMcpName] = useState("");
-  const [mcpUrl, setMcpUrl] = useState("");
-  const [isAddingServer, setIsAddingServer] = useState(false);
-  const mcpPanelRef = useRef<HTMLDivElement>(null);
-
-  const agent = useAgent<ChatAgent>({
-    agent: "ChatAgent",
-    onOpen: useCallback(() => setConnected(true), []),
-    onClose: useCallback(() => setConnected(false), []),
-    onError: useCallback(
-      (error: Event) => console.error("WebSocket error:", error),
-      []
-    ),
-    onMcpUpdate: useCallback((state: MCPServersState) => {
-      setMcpState(state);
-    }, []),
-    onMessage: useCallback(
-      (message: MessageEvent) => {
-        try {
-          const data = JSON.parse(String(message.data));
-          if (data.type === "scheduled-task") {
-            toasts.add({
-              title: "Scheduled task completed",
-              description: data.description,
-              timeout: 0
-            });
-          }
-        } catch {
-          // Not JSON or not our event
-        }
-      },
-      [toasts]
-    )
-  });
-
-  // Close MCP panel when clicking outside
-  useEffect(() => {
-    if (!showMcpPanel) return;
-    function handleClickOutside(e: MouseEvent) {
-      if (
-        mcpPanelRef.current &&
-        !mcpPanelRef.current.contains(e.target as Node)
-      ) {
-        setShowMcpPanel(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showMcpPanel]);
-
-  const handleAddServer = async () => {
-    if (!mcpName.trim() || !mcpUrl.trim()) return;
-    setIsAddingServer(true);
-    try {
-      await agent.stub.addServer(mcpName.trim(), mcpUrl.trim());
-      setMcpName("");
-      setMcpUrl("");
-    } catch (e) {
-      console.error("Failed to add MCP server:", e);
-    } finally {
-      setIsAddingServer(false);
-    }
-  };
-
-  const handleRemoveServer = async (serverId: string) => {
-    try {
-      await agent.stub.removeServer(serverId);
-    } catch (e) {
-      console.error("Failed to remove MCP server:", e);
-    }
-  };
-
-  const serverEntries = Object.entries(mcpState.servers);
-  const mcpToolCount = mcpState.tools.length;
-
-  const {
-    messages,
-    sendMessage,
-    clearHistory,
-    addToolApprovalResponse,
-    stop,
-    status
-  } = useAgentChat({
-    agent,
-    experimental_throttle: 100,
-    onToolCall: async ({ toolCall, addToolOutput }) => {
-      if (toolCall.toolName === "getUserTimezone") {
-        addToolOutput({
-          toolCallId: toolCall.toolCallId,
-          output: {
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            localTime: new Date().toLocaleTimeString()
-          }
-        });
-      }
-    }
-  });
-
-  const isStreaming = status === "streaming" || status === "submitted";
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  // Re-focus the input after streaming ends
-  useEffect(() => {
-    if (!isStreaming && textareaRef.current) {
-      textareaRef.current.focus();
-    }
-  }, [isStreaming]);
-
-  const addFiles = useCallback((files: FileList | File[]) => {
-    const images = Array.from(files).filter((f) => f.type.startsWith("image/"));
-    if (images.length === 0) return;
-    setAttachments((prev) => [...prev, ...images.map(createAttachment)]);
-  }, []);
-
-  const removeAttachment = useCallback((id: string) => {
-    setAttachments((prev) => {
-      const att = prev.find((a) => a.id === id);
-      if (att) URL.revokeObjectURL(att.preview);
-      return prev.filter((a) => a.id !== id);
-    });
-  }, []);
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.dataTransfer.types.includes("Files")) setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.currentTarget === e.target) setIsDragging(false);
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragging(false);
-      if (e.dataTransfer.files.length > 0) addFiles(e.dataTransfer.files);
-    },
-    [addFiles]
-  );
-
-  const handlePaste = useCallback(
-    (e: React.ClipboardEvent) => {
-      const items = e.clipboardData?.items;
-      if (!items) return;
-      const files: File[] = [];
-      for (const item of items) {
-        if (item.kind === "file") {
-          const file = item.getAsFile();
-          if (file) files.push(file);
-        }
-      }
-      if (files.length > 0) {
-        e.preventDefault();
-        addFiles(files);
-      }
-    },
-    [addFiles]
-  );
-
-  const send = useCallback(async () => {
-    const text = input.trim();
-    if ((!text && attachments.length === 0) || isStreaming) return;
-    setInput("");
-
-    const parts: Array<
-      | { type: "text"; text: string }
-      | { type: "file"; mediaType: string; url: string }
-    > = [];
-    if (text) parts.push({ type: "text", text });
-
-    for (const att of attachments) {
-      const dataUri = await fileToDataUri(att.file);
-      parts.push({ type: "file", mediaType: att.mediaType, url: dataUri });
-    }
-
-    for (const att of attachments) URL.revokeObjectURL(att.preview);
-    setAttachments([]);
-
-    sendMessage({ role: "user", parts });
-    if (textareaRef.current) textareaRef.current.style.height = "auto";
-  }, [input, attachments, isStreaming, sendMessage]);
-
   return (
-    <div
-      className="flex flex-col h-screen bg-kumo-elevated relative"
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      {isDragging && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-kumo-elevated/80 backdrop-blur-sm border-2 border-dashed border-kumo-brand rounded-xl m-2 pointer-events-none">
-          <div className="flex flex-col items-center gap-2 text-kumo-brand">
-            <ImageIcon size={40} />
-            <Text variant="heading3" as="span">
-              Drop images here
-            </Text>
-          </div>
-        </div>
-      )}
-
-      {/* Header */}
-      <header className="px-5 py-4 bg-kumo-base border-b border-kumo-line">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-lg font-semibold text-kumo-default">
-              <span className="mr-2">⛅</span>Agent Starter
-            </h1>
-            <Badge variant="secondary">
-              <ChatCircleDotsIcon size={12} weight="bold" className="mr-1" />
-              AI Chat
-            </Badge>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              <CircleIcon
-                size={8}
-                weight="fill"
-                className={connected ? "text-kumo-success" : "text-kumo-danger"}
-              />
-              <Text size="xs" variant="secondary">
-                {connected ? "Connected" : "Disconnected"}
-              </Text>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <BugIcon size={14} className="text-kumo-inactive" />
-              <Switch
-                checked={showDebug}
-                onCheckedChange={setShowDebug}
-                size="sm"
-                aria-label="Toggle debug mode"
-              />
-            </div>
-            <ThemeToggle />
-            <div className="relative" ref={mcpPanelRef}>
-              <Button
-                variant="secondary"
-                icon={<PlugsConnectedIcon size={16} />}
-                onClick={() => setShowMcpPanel(!showMcpPanel)}
-              >
-                MCP
-                {mcpToolCount > 0 && (
-                  <Badge variant="primary" className="ml-1.5">
-                    <WrenchIcon size={10} className="mr-0.5" />
-                    {mcpToolCount}
-                  </Badge>
-                )}
-              </Button>
-
-              {/* MCP Dropdown Panel */}
-              {showMcpPanel && (
-                <div className="absolute right-0 top-full mt-2 w-96 z-50">
-                  <Surface className="rounded-xl ring ring-kumo-line shadow-lg p-4 space-y-4">
-                    {/* Panel Header */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <PlugsConnectedIcon
-                          size={16}
-                          className="text-kumo-accent"
-                        />
-                        <Text size="sm" bold>
-                          MCP Servers
-                        </Text>
-                        {serverEntries.length > 0 && (
-                          <Badge variant="secondary">
-                            {serverEntries.length}
-                          </Badge>
-                        )}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        shape="square"
-                        aria-label="Close MCP panel"
-                        icon={<XIcon size={14} />}
-                        onClick={() => setShowMcpPanel(false)}
-                      />
-                    </div>
-
-                    {/* Add Server Form */}
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        handleAddServer();
-                      }}
-                      className="space-y-2"
-                    >
-                      <input
-                        type="text"
-                        value={mcpName}
-                        onChange={(e) => setMcpName(e.target.value)}
-                        aria-label="MCP server name"
-                        placeholder="Server name"
-                        className="w-full px-3 py-1.5 text-sm rounded-lg border border-kumo-line bg-kumo-base text-kumo-default placeholder:text-kumo-inactive focus:outline-none focus:ring-1 focus:ring-kumo-accent"
-                      />
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={mcpUrl}
-                          onChange={(e) => setMcpUrl(e.target.value)}
-                          aria-label="MCP server URL"
-                          placeholder="https://mcp.example.com"
-                          className="flex-1 px-3 py-1.5 text-sm rounded-lg border border-kumo-line bg-kumo-base text-kumo-default placeholder:text-kumo-inactive focus:outline-none focus:ring-1 focus:ring-kumo-accent font-mono"
-                        />
-                        <Button
-                          type="submit"
-                          variant="primary"
-                          size="sm"
-                          icon={<PlusIcon size={14} />}
-                          disabled={
-                            isAddingServer || !mcpName.trim() || !mcpUrl.trim()
-                          }
-                        >
-                          {isAddingServer ? "..." : "Add"}
-                        </Button>
-                      </div>
-                    </form>
-
-                    {/* Server List */}
-                    {serverEntries.length > 0 && (
-                      <div className="space-y-2 max-h-60 overflow-y-auto">
-                        {serverEntries.map(([id, server]) => (
-                          <div
-                            key={id}
-                            className="flex items-start justify-between p-2.5 rounded-lg border border-kumo-line"
-                          >
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-kumo-default truncate">
-                                  {server.name}
-                                </span>
-                                <Badge
-                                  variant={
-                                    server.state === "ready"
-                                      ? "primary"
-                                      : server.state === "failed"
-                                        ? "destructive"
-                                        : "secondary"
-                                  }
-                                >
-                                  {server.state}
-                                </Badge>
-                              </div>
-                              <span className="text-xs font-mono text-kumo-subtle truncate block mt-0.5">
-                                {server.server_url}
-                              </span>
-                              {server.state === "failed" && server.error && (
-                                <span className="text-xs text-red-500 block mt-0.5">
-                                  {server.error}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1 shrink-0 ml-2">
-                              {server.state === "authenticating" &&
-                                server.auth_url && (
-                                  <Button
-                                    variant="primary"
-                                    size="sm"
-                                    icon={<SignInIcon size={12} />}
-                                    onClick={() =>
-                                      window.open(
-                                        server.auth_url as string,
-                                        "oauth",
-                                        "width=600,height=800"
-                                      )
-                                    }
-                                  >
-                                    Auth
-                                  </Button>
-                                )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                shape="square"
-                                aria-label="Remove server"
-                                icon={<TrashIcon size={12} />}
-                                onClick={() => handleRemoveServer(id)}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Tool Summary */}
-                    {mcpToolCount > 0 && (
-                      <div className="pt-2 border-t border-kumo-line">
-                        <div className="flex items-center gap-2">
-                          <WrenchIcon size={14} className="text-kumo-subtle" />
-                          <span className="text-xs text-kumo-subtle">
-                            {mcpToolCount} tool
-                            {mcpToolCount !== 1 ? "s" : ""} available from MCP
-                            servers
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </Surface>
-                </div>
-              )}
-            </div>
-            <Button
-              variant="secondary"
-              icon={<TrashIcon size={16} />}
-              onClick={clearHistory}
-            >
-              Clear
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-5 py-6 space-y-5">
-          {messages.length === 0 && (
-            <Empty
-              icon={<ChatCircleDotsIcon size={32} />}
-              title="Start a conversation"
-              contents={
-                <div className="flex flex-wrap justify-center gap-2">
-                  {[
-                    "What's the weather in Paris?",
-                    "What timezone am I in?",
-                    "Calculate 5000 * 3",
-                    "Remind me in 5 minutes to take a break"
-                  ].map((prompt) => (
-                    <Button
-                      key={prompt}
-                      variant="outline"
-                      size="sm"
-                      disabled={isStreaming}
-                      onClick={() => {
-                        sendMessage({
-                          role: "user",
-                          parts: [{ type: "text", text: prompt }]
-                        });
-                      }}
-                    >
-                      {prompt}
-                    </Button>
-                  ))}
-                </div>
-              }
-            />
+    <span aria-hidden="true" className={`avatar ${large ? "large" : ""}`}>
+      {person.symbol}
+    </span>
+  );
+}
+function Rules({ close }: { close: () => void }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    ref.current?.showModal();
+  }, []);
+  return (
+    <dialog ref={ref} onCancel={close}>
+      <div className="rules-inner">
+        <button className="close" onClick={close} aria-label="Close rules">
+          ×
+        </button>
+        <span className="eyebrow">THE RULES ARE SIMPLE.</span>
+        <h2>
+          Being yourself
+          <br />
+          is a bad idea.
+        </h2>
+        <ol>
+          <li>
+            <strong>Six strangers. One human.</strong>
+            <p>
+              That’s you. Five independent AI players are trying to find you.
+              They don’t know who the other AI players are either.
+            </p>
+          </li>
+          <li>
+            <strong>Talk. Question. Cast doubt.</strong>
+            <p>
+              You get a new name every game. Steer suspicion toward someone
+              else.
+            </p>
+          </li>
+          <li>
+            <strong>Vote someone out.</strong>
+            <p>
+              After each discussion, everyone gets one secret vote. No
+              self-votes. Most votes is out; ties are settled randomly. Missing
+              votes abstain.
+            </p>
+          </li>
+          <li>
+            <strong>Make the final two.</strong>
+            <p>
+              Survive four eliminations to win. If you’re caught, it’s over.
+              Identities stay hidden until the final reveal.
+            </p>
+          </li>
+        </ol>
+        <button className="primary" onClick={close}>
+          GOT IT <Arrow />
+        </button>
+      </div>
+    </dialog>
+  );
+}
+function Landing({
+  start,
+  busy,
+  error
+}: {
+  start: () => void;
+  busy: boolean;
+  error: string;
+}) {
+  const names = ["chair", "pigeon", "diesel", "rajma", "helmet", "you?"];
+  const symbols = ["◒", "✳", "▥", "◈", "▰", "⌁"];
+  return (
+    <main className="landing">
+      <div className="hero-meta">
+        <span>
+          <i className="dot" /> A GAME OF SOCIAL SURVIVAL
+        </span>
+        <span>01 HUMAN · 05 IMPOSTORS</span>
+      </div>
+      <section className="hero">
+        <div className="hero-copy">
+          <h1>
+            HUMAN<span>?</span>
+          </h1>
+          <p className="premise">
+            Five of them are AI.
+            <br />
+            You’re the only human.
+            <br />
+            <span>Don’t let them figure it out.</span>
+          </p>
+          <button className="primary enter" onClick={start} disabled={busy}>
+            {busy ? "FINDING YOUR SEAT" : "BLEND IN"}{" "}
+            {busy ? <span className="spinner" /> : <Arrow />}
+          </button>
+          <p className="entry-note">No account. No audience. Just suspicion.</p>
+          {error && (
+            <p className="error" role="alert">
+              {error}
+            </p>
           )}
-
-          {messages.map((message: UIMessage, index: number) => {
-            const isUser = message.role === "user";
-            const isLastAssistant =
-              message.role === "assistant" && index === messages.length - 1;
-
-            return (
-              <div key={message.id} className="space-y-2">
-                {showDebug && (
-                  <pre className="text-[11px] text-kumo-subtle bg-kumo-control rounded-lg p-3 overflow-auto max-h-64">
-                    {JSON.stringify(message, null, 2)}
-                  </pre>
-                )}
-
-                {/* Render parts in chronological (array) order */}
-                {message.parts.map((part, i) => {
-                  const key = `${message.id}-${i}`;
-
-                  if (isToolUIPart(part)) {
-                    return (
-                      <ToolPartView
-                        key={key}
-                        part={part}
-                        addToolApprovalResponse={addToolApprovalResponse}
-                      />
-                    );
-                  }
-
-                  if (part.type === "reasoning") {
-                    if (!part.text.trim()) return null;
-                    const isDone = part.state === "done" || !isStreaming;
-                    return (
-                      <div key={key} className="flex justify-start">
-                        <details className="max-w-[85%] w-full" open={!isDone}>
-                          <summary className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg bg-purple-500/10 border border-purple-500/20 text-sm select-none">
-                            <BrainIcon size={14} className="text-purple-400" />
-                            <span className="font-medium text-kumo-default">
-                              Reasoning
-                            </span>
-                            {isDone ? (
-                              <span className="text-xs text-kumo-success">
-                                Complete
-                              </span>
-                            ) : (
-                              <span className="text-xs text-kumo-brand">
-                                Thinking...
-                              </span>
-                            )}
-                            <CaretDownIcon
-                              size={14}
-                              className="ml-auto text-kumo-inactive"
-                            />
-                          </summary>
-                          <pre className="mt-2 px-3 py-2 rounded-lg bg-kumo-control text-xs text-kumo-default whitespace-pre-wrap overflow-auto max-h-64">
-                            {part.text}
-                          </pre>
-                        </details>
-                      </div>
-                    );
-                  }
-
-                  if (
-                    part.type === "file" &&
-                    part.mediaType.startsWith("image/")
-                  ) {
-                    return (
-                      <div
-                        key={key}
-                        className={`flex ${isUser ? "justify-end" : "justify-start"}`}
-                      >
-                        <img
-                          src={part.url}
-                          alt="Attachment"
-                          className="max-h-64 rounded-xl border border-kumo-line object-contain"
-                        />
-                      </div>
-                    );
-                  }
-
-                  if (part.type === "text") {
-                    if (!part.text) return null;
-
-                    if (isUser) {
-                      return (
-                        <div key={key} className="flex justify-end">
-                          <div className="max-w-[85%] px-4 py-2.5 rounded-2xl rounded-br-md bg-kumo-contrast text-kumo-inverse leading-relaxed">
-                            {part.text}
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div key={key} className="flex justify-start">
-                        <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-kumo-base text-kumo-default leading-relaxed">
-                          <Streamdown
-                            className="sd-theme rounded-2xl rounded-bl-md p-3"
-                            plugins={{ code }}
-                            controls={false}
-                            isAnimating={isLastAssistant && isStreaming}
-                          >
-                            {part.text}
-                          </Streamdown>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  return null;
-                })}
+        </div>
+        <div
+          className="identity-scene"
+          aria-label="Six anonymous identities, one secret"
+        >
+          <div className="scene-top">
+            <span>EVERYONE HAS A NAME.</span>
+            <span>NO ONE HAS AN ALIBI.</span>
+          </div>
+          <div className="identity-grid">
+            {names.map((name, i) => (
+              <div key={name} className={`identity-card card-${i}`}>
+                <span className="card-number">0{i + 1}</span>
+                <span className="portrait">{symbols[i]}</span>
+                <span className="card-name">{name}</span>
+                <span className="card-status">IDENTITY UNKNOWN</span>
               </div>
-            );
-          })}
-
-          <div ref={messagesEndRef} />
+            ))}
+          </div>
+          <div className="scene-caption">
+            <span className="tiny-cross">+</span>
+            <p>“that’s exactly what a human would say.”</p>
+            <span className="tiny-cross">+</span>
+          </div>
+        </div>
+      </section>
+      <section className="mode-strip" aria-label="Game modes">
+        <div className="mode active">
+          <span className="mode-index">01</span>
+          <div>
+            <strong>BLEND IN</strong>
+            <p>One human against the room.</p>
+          </div>
+          <span className="mode-time">
+            ~ 5 MIN <span className="accent">↗</span>
+          </span>
+        </div>
+        <div className="mode locked">
+          <span className="mode-index">02</span>
+          <div>
+            <strong>FIND THE AI</strong>
+            <p>The tables will turn.</p>
+          </div>
+          <span className="mode-time">
+            COMING LATER <span aria-hidden="true">⊘</span>
+          </span>
+        </div>
+      </section>
+      <footer className="landing-foot">
+        <span>A LITTLE CONVERSATION. A LOT TO HIDE.</span>
+        <span>THE IMITATION GAME © {new Date().getFullYear()}</span>
+      </footer>
+    </main>
+  );
+}
+function Reveal({
+  state,
+  play,
+  busy
+}: {
+  state: Snapshot;
+  play: () => void;
+  busy: boolean;
+}) {
+  const [count, setCount] = useState(0);
+  const order = [
+    ...state.participants.filter((p) => p.id !== state.selfId),
+    state.participants.find((p) => p.id === state.selfId)!
+  ];
+  useEffect(() => {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setCount(6);
+      return;
+    }
+    const timer = setInterval(
+      () =>
+        setCount((n) => {
+          if (n >= 6) clearInterval(timer);
+          return Math.min(6, n + 1);
+        }),
+      520
+    );
+    return () => clearInterval(timer);
+  }, [state.roomId]);
+  const complete = count >= 6;
+  const survived = state.results.filter(
+    (r) => r.eliminated !== state.selfId
+  ).length;
+  return (
+    <main className="reveal">
+      <div className="reveal-heading">
+        <span className="eyebrow">THE ROOM HAS NOTHING LEFT TO HIDE.</span>
+        <h1>
+          {!complete ? (
+            "Masks off."
+          ) : state.outcome === "blended" ? (
+            <>
+              You passed
+              <br />
+              for one of them<span>.</span>
+            </>
+          ) : (
+            <>
+              A little
+              <br />
+              too human<span>.</span>
+            </>
+          )}
+        </h1>
+        <p>
+          {!complete
+            ? "Six names. Here’s who was behind them."
+            : state.outcome === "blended"
+              ? "Four votes. Five artificial minds. You made the final two."
+              : `You survived ${survived} of 4 eliminations. The room found you.`}
+        </p>
+      </div>
+      <div className="reveal-roster">
+        {order.map((p, i) => {
+          const identity = state.identities?.find((x) => x.id === p.id),
+            shown = count > i;
+          return (
+            <div
+              key={p.id}
+              className={`reveal-person ${shown ? "unmasked" : ""} ${p.id === state.selfId ? "is-you" : ""}`}
+            >
+              <Avatar person={p} />
+              <div className="reveal-name">
+                <strong>{p.name}</strong>
+                <small>
+                  {shown
+                    ? identity?.kind === "ai"
+                      ? `Agent #${String(identity.agentId).padStart(2, "0")} · ${identity.games ?? 0} ${identity.games === 1 ? "game" : "games"} played`
+                      : "The one with something to lose."
+                    : "Identity concealed"}
+                </small>
+              </div>
+              <span className="identity-type">
+                {shown ? (identity?.kind === "human" ? "YOU" : "AI") : "—"}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <div
+        className={`after-reveal ${complete ? "visible" : ""}`}
+        aria-hidden={!complete}
+      >
+        <div className="memory-note">
+          <span aria-hidden="true">↳</span>
+          <div>
+            <strong>They’ll be here after you leave.</strong>
+            <p>
+              {state.identities?.some((p) => p.learned)
+                ? `Agent #${String(state.identities.find((p) => p.learned)?.agentId).padStart(2, "0")} updated its beliefs after this match.`
+                : state.identities?.some((p) => p.reflection === "pending")
+                  ? "The room is reflecting. Some of this game may stay with them."
+                  : "Same players. New names. Another game added to their history."}
+            </p>
+          </div>
+        </div>
+        <button className="primary" onClick={play} disabled={busy || !complete}>
+          {busy ? "FINDING YOUR SEAT" : "ANOTHER IDENTITY. ANOTHER CHANCE."}
+          <Arrow />
+        </button>
+        <p className="replay-note">Your next name is waiting.</p>
+      </div>
+    </main>
+  );
+}
+function Match({
+  state,
+  connected,
+  send,
+  error
+}: {
+  state: Snapshot;
+  connected: boolean;
+  send: (action: ClientAction) => boolean;
+  error: string;
+}) {
+  const [now, setNow] = useState(Date.now()),
+    [text, setText] = useState(""),
+    [selected, setSelected] = useState<string | null>(null);
+  const [sent, setSent] = useState<string | null>(null),
+    [showLatest, setShowLatest] = useState(false);
+  const feed = useRef<HTMLDivElement>(null),
+    pinned = useRef(true),
+    input = useRef<HTMLTextAreaElement>(null);
+  const offset = useRef(state.serverNow - Date.now());
+  useEffect(() => {
+    offset.current = state.serverNow - Date.now();
+  }, [state.serverNow]);
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(id);
+  }, []);
+  useEffect(() => {
+    setSelected(null);
+  }, [state.round, state.phase]);
+  useEffect(() => {
+    if (sent && state.messages.some((m) => m.id === sent)) {
+      setSent(null);
+      setText("");
+    }
+  }, [state.messages, sent]);
+  useEffect(() => {
+    if (error || !connected) setSent(null);
+  }, [error, connected]);
+  useEffect(() => {
+    if (pinned.current && feed.current)
+      feed.current.scrollTop = feed.current.scrollHeight;
+    else setShowLatest(true);
+  }, [state.messages.length, state.phase]);
+  const seconds = Math.max(
+    0,
+    Math.ceil((state.deadline - now - offset.current) / 1000)
+  );
+  const self = state.participants.find((p) => p.id === state.selfId)!;
+  const active = state.participants.filter((p) => !p.eliminated),
+    voting = state.phase === "voting";
+  const result = state.results.at(-1),
+    eliminated = state.participants.find((p) => p.id === result?.eliminated);
+  const submit = (e?: FormEvent) => {
+    e?.preventDefault();
+    if (!text.trim() || sent) return;
+    const id = crypto.randomUUID();
+    if (send({ type: "message", text: text.trim(), id })) setSent(id);
+  };
+  const vote = () => {
+    if (selected) send({ type: "vote", target: selected, round: state.round });
+  };
+  const label =
+    state.phase === "arrival"
+      ? "TAKE YOUR SEAT"
+      : voting
+        ? "TRUST YOUR SUSPICION"
+        : state.phase === "elimination"
+          ? "THE ROOM HAS DECIDED"
+          : [
+              "MAKE AN IMPRESSION.",
+              "SOMEONE IS LYING.",
+              "CHOOSE YOUR WORDS.",
+              "NOWHERE LEFT TO HIDE."
+            ][state.round - 1];
+  return (
+    <main className={`match ${voting ? "voting" : ""}`}>
+      <div className="match-top">
+        <div>
+          <span className="eyebrow">
+            BLEND IN{" "}
+            <span className="muted">
+              / ROOM {state.roomId.slice(0, 6).toUpperCase()}
+            </span>
+          </span>
+          <h1>{label}</h1>
+        </div>
+        <div
+          className={`clock ${seconds <= 10 && state.phase !== "arrival" ? "urgent" : ""}`}
+        >
+          <span>
+            {voting
+              ? "VOTING"
+              : state.phase === "elimination"
+                ? "NEXT UP"
+                : "ROUND " + String(state.round).padStart(2, "0")}
+          </span>
+          <strong>
+            {String(Math.floor(seconds / 60)).padStart(2, "0")}
+            <b>:</b>
+            {String(seconds % 60).padStart(2, "0")}
+          </strong>
         </div>
       </div>
-
-      {/* Input */}
-      <div className="border-t border-kumo-line bg-kumo-base">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            send();
-          }}
-          className="max-w-3xl mx-auto px-5 py-4"
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept="image/*"
-            aria-label="Upload image attachments"
-            className="hidden"
-            onChange={(e) => {
-              if (e.target.files) addFiles(e.target.files);
-              e.target.value = "";
-            }}
-          />
-
-          {attachments.length > 0 && (
-            <div className="flex gap-2 mb-2 flex-wrap">
-              {attachments.map((att) => (
-                <div
-                  key={att.id}
-                  className="relative group rounded-lg border border-kumo-line bg-kumo-control overflow-hidden"
-                >
-                  <img
-                    src={att.preview}
-                    alt={att.file.name}
-                    className="h-16 w-16 object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeAttachment(att.id)}
-                    className="absolute top-0.5 right-0.5 rounded-full bg-kumo-contrast/80 text-kumo-inverse p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                    aria-label={`Remove ${att.file.name}`}
-                  >
-                    <XIcon size={10} />
-                  </button>
+      <div className="match-grid">
+        <aside className="roster">
+          <div className="roster-title">
+            <span>THE ROOM</span>
+            <span>{active.length}/6 REMAIN</span>
+          </div>
+          <div className="participants">
+            {state.participants.map((p) => (
+              <button
+                key={p.id}
+                className={`participant ${p.eliminated ? "out" : ""} ${selected === p.id || state.votedFor === p.id ? "selected" : ""}`}
+                disabled={
+                  !voting ||
+                  p.eliminated ||
+                  p.id === self.id ||
+                  !!state.votedFor ||
+                  !connected
+                }
+                onClick={() => setSelected(p.id)}
+                aria-pressed={selected === p.id}
+                aria-label={`${p.name}${p.id === self.id ? ", you" : ""}${p.eliminated ? ", eliminated" : voting ? ", select to vote" : ""}`}
+              >
+                <Avatar person={p} />
+                <div>
+                  <strong>
+                    {p.name}
+                    {p.id === self.id && <span className="you-tag">YOU</span>}
+                  </strong>
+                  <small>
+                    {p.eliminated
+                      ? "Eliminated"
+                      : state.votedFor === p.id
+                        ? "Your vote is locked"
+                        : voting && p.id !== self.id
+                          ? "Suspect?"
+                          : "Identity unknown"}
+                  </small>
                 </div>
+                <span className="participant-end">
+                  {p.eliminated
+                    ? "×"
+                    : voting && p.id !== self.id
+                      ? selected === p.id || state.votedFor === p.id
+                        ? "●"
+                        : "○"
+                      : "·"}
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="your-objective">
+            <span className="eyebrow">YOUR ONLY JOB</span>
+            <p>
+              Let someone else
+              <br />
+              look human.
+            </p>
+            <small>
+              Survive to the final two.
+              <br />
+              Identities are revealed at the end.
+            </small>
+            <div
+              className="round-track"
+              aria-label={`Round ${state.round} of 4`}
+            >
+              {[1, 2, 3, 4].map((r) => (
+                <span key={r} className={r <= state.round ? "filled" : ""} />
               ))}
             </div>
-          )}
-
-          <div className="flex items-end gap-3 rounded-xl border border-kumo-line bg-kumo-base p-3 shadow-sm focus-within:ring-2 focus-within:ring-kumo-ring focus-within:border-transparent transition-shadow">
-            <Button
-              type="button"
-              variant="ghost"
-              shape="square"
-              aria-label="Attach images"
-              icon={<PaperclipIcon size={18} />}
-              onClick={() => fileInputRef.current?.click()}
-              disabled={!connected || isStreaming}
-              className="mb-0.5"
-            />
-            <InputArea
-              ref={textareaRef}
-              value={input}
-              onValueChange={setInput}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  send();
-                }
-              }}
-              onInput={(e) => {
-                const el = e.currentTarget;
-                el.style.height = "auto";
-                el.style.height = `${el.scrollHeight}px`;
-              }}
-              onPaste={handlePaste}
-              placeholder={
-                attachments.length > 0
-                  ? "Add a message or send images..."
-                  : "Send a message..."
-              }
-              disabled={!connected || isStreaming}
-              rows={1}
-              className="flex-1 ring-0! focus:ring-0! shadow-none! bg-transparent! outline-none! resize-none max-h-40"
-            />
-            {isStreaming ? (
-              <Button
-                type="button"
-                variant="secondary"
-                shape="square"
-                aria-label="Stop generation"
-                icon={<StopIcon size={18} />}
-                onClick={stop}
-                className="mb-0.5"
-              />
-            ) : (
-              <Button
-                type="submit"
-                variant="primary"
-                shape="square"
-                aria-label="Send message"
-                disabled={
-                  (!input.trim() && attachments.length === 0) || !connected
-                }
-                icon={<PaperPlaneRightIcon size={18} />}
-                className="mb-0.5"
-              />
+            <small>ROUND {state.round} OF 4</small>
+          </div>
+        </aside>
+        <section className="conversation">
+          <div className="conversation-bar">
+            <span>
+              <i className={`dot ${connected ? "" : "offline"}`} />{" "}
+              {connected
+                ? state.phase === "discussion"
+                  ? "DISCUSSION OPEN"
+                  : state.phase === "arrival"
+                    ? "GATHERING THE ROOM"
+                    : "DISCUSSION PAUSED"
+                : "RECONNECTING"}
+            </span>
+            <span>EVERY WORD IS EVIDENCE.</span>
+          </div>
+          <div
+            className="feed"
+            ref={feed}
+            role="log"
+            aria-label="Room conversation"
+            aria-live="polite"
+            onScroll={() => {
+              const el = feed.current!;
+              pinned.current =
+                el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+              if (pinned.current) setShowLatest(false);
+            }}
+          >
+            <div className="room-notice">
+              <span>↳</span>
+              <p>
+                You are <strong>{self.name}</strong>. They don’t know that
+                you’re human.
+                <br />
+                <span>Say something believable. Or don’t.</span>
+              </p>
+            </div>
+            {state.phase === "arrival" && (
+              <div className="arrival">
+                <span className="eyebrow">A NEW NAME. A CLEAN SLATE.</span>
+                <Avatar person={self} large />
+                <h2>{self.name}</h2>
+                <p>Keep your story straight.</p>
+                <div className="joining-dots">
+                  <i />
+                  <i />
+                  <i />
+                </div>
+              </div>
+            )}
+            {state.messages.length === 0 && state.phase === "discussion" && (
+              <div className="quiet">
+                <span>“</span>
+                <p>A suspiciously quiet room.</p>
+                <small>Someone has to go first.</small>
+              </div>
+            )}
+            {state.messages.map((m, i) => {
+              const p = state.participants.find((p) => p.id === m.sender)!;
+              return (
+                <div key={m.id}>
+                  {(i === 0 || state.messages[i - 1].round !== m.round) && (
+                    <div className="round-divider">
+                      <span>ROUND {String(m.round).padStart(2, "0")}</span>
+                    </div>
+                  )}
+                  <article className="message">
+                    <Avatar person={p} />
+                    <div className="message-body">
+                      <div className="message-meta">
+                        <strong>{p.name}</strong>
+                        {p.id === self.id && (
+                          <span className="you-tag">YOU</span>
+                        )}
+                        <time>
+                          {new Date(m.at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit"
+                          })}
+                        </time>
+                      </div>
+                      <p>{m.text}</p>
+                    </div>
+                  </article>
+                </div>
+              );
+            })}
+            {voting && (
+              <div className="vote-stage">
+                <span className="eyebrow">ONE VOTE. NO TAKEBACKS.</span>
+                <h2>
+                  Who seems
+                  <br />
+                  <em>too human?</em>
+                </h2>
+                <p>
+                  {state.votedFor
+                    ? "Your suspicion is on the record."
+                    : "Choose a name in the room. Make it count."}
+                </p>
+                <div className="vote-targets">
+                  {active
+                    .filter((p) => p.id !== self.id)
+                    .map((p) => (
+                      <button
+                        key={p.id}
+                        className={
+                          selected === p.id || state.votedFor === p.id
+                            ? "chosen"
+                            : ""
+                        }
+                        disabled={!!state.votedFor || !connected}
+                        onClick={() => setSelected(p.id)}
+                        aria-pressed={selected === p.id}
+                      >
+                        <span aria-hidden="true">{p.symbol}</span>
+                        {p.name}
+                      </button>
+                    ))}
+                </div>
+                <button
+                  className="primary vote-confirm"
+                  disabled={!selected || !!state.votedFor || !connected}
+                  onClick={vote}
+                >
+                  {state.votedFor
+                    ? "VOTE LOCKED ✓"
+                    : selected
+                      ? `VOTE OUT ${state.participants.find((p) => p.id === selected)?.name.toUpperCase()}`
+                      : "SELECT A SUSPECT"}
+                  {!state.votedFor && <Arrow />}
+                </button>
+                <small>
+                  {state.voteCount} OF {active.length} VOTES LOCKED
+                </small>
+              </div>
+            )}
+            {state.phase === "elimination" && result && (
+              <div className="elimination-stage">
+                <span className="eyebrow">
+                  THE VERDICT · ROUND {state.round}
+                </span>
+                <h2>
+                  {eliminated?.name}
+                  <br />
+                  <span>is out.</span>
+                </h2>
+                <p>Their identity stays with them. For now.</p>
+                <div className="vote-distribution">
+                  {Object.entries(result.counts)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([id, n]) => (
+                      <div key={id}>
+                        <span>
+                          {state.participants.find((p) => p.id === id)?.name}
+                        </span>
+                        <div className="vote-meter">
+                          <i
+                            style={{
+                              width: `${
+                                (n /
+                                  Math.max(
+                                    1,
+                                    Object.values(result.counts).reduce(
+                                      (a, b) => a + b,
+                                      0
+                                    )
+                                  )) *
+                                100
+                              }%`
+                            }}
+                          />
+                        </div>
+                        <b>{n}</b>
+                      </div>
+                    ))}
+                </div>
+                {result.tied && <small>Tied vote. The room drew lots.</small>}
+                {result.abstentions > 0 && (
+                  <small>{result.abstentions} abstained.</small>
+                )}
+              </div>
             )}
           </div>
-        </form>
-        <div className="flex justify-center pb-3">
-          <PoweredByCloudflare href="https://developers.cloudflare.com/agents/" />
-        </div>
+          {showLatest && (
+            <button
+              className="latest"
+              onClick={() => {
+                feed.current!.scrollTop = feed.current!.scrollHeight;
+                pinned.current = true;
+                setShowLatest(false);
+              }}
+            >
+              New messages ↓
+            </button>
+          )}
+          <div className="composer-wrap">
+            {(error || state.serviceNotice || !connected) && (
+              <output className="inline-error">
+                {!connected
+                  ? "Connection interrupted. Rejoining your room…"
+                  : error || state.serviceNotice}
+              </output>
+            )}
+            <form className="composer" onSubmit={submit}>
+              <Avatar person={self} />
+              <textarea
+                ref={input}
+                value={text}
+                maxLength={MAX_MESSAGE}
+                rows={1}
+                aria-label="Your message"
+                disabled={
+                  state.phase !== "discussion" ||
+                  self.eliminated ||
+                  !connected ||
+                  !!sent
+                }
+                placeholder={
+                  state.phase === "arrival"
+                    ? "Get comfortable. Not too comfortable."
+                    : state.phase === "discussion"
+                      ? "Act natural…"
+                      : voting
+                        ? "Less talking. More pointing fingers."
+                        : "Let that sink in."
+                }
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (
+                    e.key === "Enter" &&
+                    !e.shiftKey &&
+                    !e.nativeEvent.isComposing
+                  ) {
+                    e.preventDefault();
+                    submit();
+                  }
+                }}
+              />
+              <button
+                type="submit"
+                aria-label="Send message"
+                disabled={
+                  !text.trim() ||
+                  state.phase !== "discussion" ||
+                  !connected ||
+                  !!sent
+                }
+              >
+                {sent ? "·" : "↑"}
+              </button>
+            </form>
+            <div className="composer-hint">
+              <span>YOU ARE {self.name.toUpperCase()}</span>
+              <span>
+                {text.length > 220
+                  ? `${text.length}/${MAX_MESSAGE}`
+                  : "ENTER TO SEND"}
+              </span>
+            </div>
+          </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }
-
 export default function App() {
-  return (
-    <Toasty>
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center h-screen text-kumo-inactive">
-            Loading...
-          </div>
+  const [roomId, setRoomId] = useState<string | null>(() =>
+    localStorage.getItem("human-room")
+  );
+  const [state, setState] = useState<Snapshot | null>(null),
+    [connected, setConnected] = useState(false),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState(""),
+    [rules, setRules] = useState(false),
+    [unavailable, setUnavailable] = useState(false);
+  const socket = useRef<WebSocket | null>(null);
+  useEffect(() => {
+    if (!roomId) return;
+    let cancelled = false,
+      retry: ReturnType<typeof setTimeout>,
+      attempt = 0;
+    const accept = (s: Snapshot) =>
+      setState((previous) =>
+        previous &&
+        previous.roomId === s.roomId &&
+        previous.revision > s.revision
+          ? previous
+          : s
+      );
+    const connect = async () => {
+      try {
+        const response = await fetch(`/api/rooms/${roomId}`);
+        if (!response.ok) {
+          const data = (await response.json()) as { error: string };
+          throw new Error(data.error);
         }
-      >
-        <Chat />
-      </Suspense>
-    </Toasty>
+        const next = (await response.json()) as Snapshot;
+        if (cancelled) return;
+        accept(next);
+        const ws = new WebSocket(
+          `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/api/rooms/${roomId}/socket`
+        );
+        socket.current = ws;
+        ws.onopen = () => {
+          if (cancelled) {
+            ws.close();
+            return;
+          }
+          attempt = 0;
+          setConnected(true);
+          setError("");
+          setUnavailable(false);
+        };
+        ws.onmessage = (event) => {
+          try {
+            const packet = JSON.parse(event.data);
+            if (packet.type === "state") accept(packet.state);
+            else if (packet.type === "error") setError(packet.message);
+          } catch {
+            setError("A room update was interrupted. Reconnecting…");
+            ws.close();
+          }
+        };
+        ws.onclose = () => {
+          setConnected(false);
+          if (!cancelled)
+            retry = setTimeout(connect, Math.min(10000, 800 * 2 ** attempt++));
+        };
+        ws.onerror = () => ws.close();
+      } catch (err) {
+        if (!cancelled) {
+          setError(String(err instanceof Error ? err.message : err));
+          setUnavailable(true);
+          retry = setTimeout(connect, 5000);
+        }
+      }
+    };
+    void connect();
+    return () => {
+      cancelled = true;
+      clearTimeout(retry);
+      socket.current?.close();
+      socket.current = null;
+    };
+  }, [roomId]);
+  const start = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch("/api/rooms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}"
+      });
+      const data = (await response.json()) as {
+        roomId?: string;
+        error?: string;
+      };
+      if (!response.ok || !data.roomId)
+        throw new Error(data.error || "Could not find a room. Try again.");
+      localStorage.setItem("human-room", data.roomId);
+      setState(null);
+      setUnavailable(false);
+      setRoomId(data.roomId);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Could not reach the room. Try again."
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+  const home = () => {
+    if (
+      roomId &&
+      state &&
+      state.phase !== "reveal" &&
+      state.phase !== "interrupted"
+    ) {
+      setRules(true);
+      return;
+    }
+    localStorage.removeItem("human-room");
+    setRoomId(null);
+    setState(null);
+    setError("");
+  };
+  const send = (action: ClientAction) => {
+    if (socket.current?.readyState !== WebSocket.OPEN) {
+      setError("Reconnecting. Keep that thought.");
+      return false;
+    }
+    setError("");
+    socket.current.send(JSON.stringify(action));
+    return true;
+  };
+  return (
+    <>
+      <header className="site-header">
+        <Mark home={home} />
+        <span className="header-center">THE IMITATION GAME</span>
+        <button className="rules-button" onClick={() => setRules(true)}>
+          HOW TO PLAY <span>↗</span>
+        </button>
+      </header>
+      {!roomId ? (
+        <Landing start={start} busy={busy} error={error} />
+      ) : !state ? (
+        <main className="loading">
+          <span className="eyebrow">LEAVE YOURSELF AT THE DOOR.</span>
+          <h1>{unavailable ? "Lost the room." : "Finding your alias…"}</h1>
+          {unavailable ? (
+            <>
+              <p role="alert">{error}</p>
+              <button className="primary" onClick={start} disabled={busy}>
+                START A FRESH MATCH <Arrow />
+              </button>
+            </>
+          ) : (
+            <span className="spinner" />
+          )}
+        </main>
+      ) : state.phase === "interrupted" ? (
+        <main className="loading">
+          <span className="eyebrow">CONNECTION LOST.</span>
+          <h1>The room went quiet.</h1>
+          <p>
+            The room couldn’t stay connected. This match won’t count. Try again
+            a little later.
+          </p>
+          <button className="primary" onClick={home}>
+            BACK TO THE DOOR <Arrow />
+          </button>
+        </main>
+      ) : state.phase === "reveal" ? (
+        <>
+          <Reveal key={roomId} state={state} play={start} busy={busy} />
+          {error && (
+            <p className="reveal-error" role="alert">
+              {error}
+            </p>
+          )}
+        </>
+      ) : (
+        <Match
+          key={roomId}
+          state={state}
+          connected={connected}
+          send={send}
+          error={error}
+        />
+      )}
+      {rules && <Rules close={() => setRules(false)} />}
+    </>
   );
 }
