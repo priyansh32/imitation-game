@@ -1,245 +1,437 @@
-# Agent Starter
+# HUMAN?
 
-![npm i agents command](./npm-agents-banner.svg)
+> A social deduction game where persistent AI players learn from the games they play.
 
-<a href="https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/agents-starter"><img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare"/></a>
+**HUMAN?** is an experimental multiplayer game built around persistent AI agents.
 
-A starter template for building AI chat agents on Cloudflare, powered by the [Agents SDK](https://developers.cloudflare.com/agents/).
+The first game mode, **Blend In**, reverses the usual Turing test:
 
-Uses Workers AI (no API key required), with tools for weather, timezone detection, calculations with approval, task scheduling, and vision (image input).
+**You are the only human in a room with five AI agents. They are trying to find you. Convince them to vote each other out.**
 
-## Quick start
+The agents are not told which other participants are AI. Every player receives a temporary anonymous identity, and the five agents independently observe the conversation, form suspicions, interact, and vote.
 
-```bash
-npx create-cloudflare@latest --template cloudflare/agents-starter
-cd agents-starter
-npm install
-npm run dev
+The interesting part begins after the match ends.
+
+These aren't intended to be disposable LLM sessions. Each AI participant has a persistent identity with its own personality, behavioral tendencies, memories, game history, and learned strategies.
+
+Over many games, agents that began from the same base can develop differently because they experience different humans and make different mistakes.
+
+---
+
+## Game Modes
+
+### Blend In
+
+**1 Human · 5 AI**
+
+The human must survive while five AI agents attempt to identify them.
+
+The agents know exactly one participant is human, but they do not know which participant it is—and they do not know which other participants are AI.
+
+The human wins by manipulating the conversation and convincing the agents to eliminate one another.
+
+### Find the AI
+
+**5 Humans · 1 AI**
+
+The inverse mode.
+
+Humans attempt to identify the AI while a persistent AI agent attempts to survive by blending into the group.
+
+This mode is intended for environments with sufficient concurrent human players.
+
+---
+
+## How a Match Works
+
+Six participants enter with temporary randomized identities:
+
+```text
+wet_sock
+diesel
+pigeon
+rajma
+chair
+helmet
 ```
 
-> **Cloudflare authentication is required to run locally.** This template uses
-> Workers AI with `"ai": { "remote": true }` in `wrangler.jsonc`, and Workers AI
-> has no local simulator — so `npm run dev` opens a remote proxy session against
-> Cloudflare and needs you to be authenticated. Either run `wrangler login` once
-> in an interactive terminal, or set a `CLOUDFLARE_API_TOKEN` environment
-> variable (e.g. in a `.env` file). No third-party (OpenAI/Anthropic) key is
-> needed, but a Cloudflare login is.
+A match alternates between discussion and voting:
 
-Open [http://localhost:5173](http://localhost:5173) to see your agent in action.
-
-Try these prompts to see the different features:
-
-- **"What's the weather in Paris?"** — server-side tool (runs automatically)
-- **"What timezone am I in?"** — client-side tool (browser provides the answer)
-- **"Calculate 5000 \* 3"** — approval tool (asks you before running)
-- **"Remind me in 5 minutes to take a break"** — scheduling
-- **Drop an image and ask "What's in this image?"** — vision (image understanding)
-
-## Project structure
-
-```
-src/
-  server.ts    # Chat agent with tools and scheduling
-  app.tsx      # Chat UI built with Kumo components
-  client.tsx   # React entry point
-  styles.css   # Tailwind + Kumo styles
+```text
+Discussion
+    ↓
+Vote
+    ↓
+Elimination
+    ↓
+Discussion
+    ↓
+Vote
+    ↓
+...
+    ↓
+Final Reveal
 ```
 
-## What's included
+Eliminated players' actual identities remain hidden until the end.
 
-- **AI Chat** — Streaming responses powered by Workers AI via `AIChatAgent`
-- **Image input** — Drag-and-drop, paste, or click to attach images for vision-capable models
-- **Three tool patterns** — server-side auto-execute, client-side (browser), and human-in-the-loop approval
-- **Scheduling** — one-time, delayed, and recurring (cron) tasks
-- **Reasoning display** — shows model thinking as it streams, collapses when done
-- **Debug mode** — toggle in the header to inspect raw message JSON for each message
-- **Kumo UI** — Cloudflare's design system with dark/light mode
-- **Real-time** — WebSocket connection with automatic reconnection and message persistence
+A complete game should take roughly 4–6 minutes.
 
-## Making it your own
+---
 
-### Name your project
+## Persistent Agents
 
-Update the name in `package.json` and `wrangler.jsonc` — the `name` in `wrangler.jsonc` becomes your deployed Worker's URL (`<name>.<subdomain>.workers.dev`).
+Underneath the temporary names are persistent AI identities.
 
-### Change the system prompt
+For example:
 
-Edit the `system` string in `server.ts` to give your agent a different personality or focus area. This is the most impactful single change you can make.
-
-### Replace the demo tools with real ones
-
-The starter ships with demo tools (`getWeather` returns random data, `calculate` does basic arithmetic). Replace them with real implementations:
-
-```ts
-// In server.ts, replace a demo tool with a real API call:
-getWeather: tool({
-  description: "Get the current weather for a city",
-  inputSchema: z.object({ city: z.string() }),
-  execute: async ({ city }) => {
-    const res = await fetch(`https://api.weather.example/${city}`);
-    return res.json();
-  }
-}),
+```text
+Agent #42 → diesel
+Agent #17 → pigeon
+Agent #81 → chair
 ```
 
-### Add your own tools
+In the next game:
 
-Add new tools to the `tools` object in `server.ts`. There are three patterns:
-
-```ts
-// Auto-execute: runs on the server, no user interaction
-myTool: tool({
-  description: "...",
-  inputSchema: z.object({ /* ... */ }),
-  execute: async (input) => { /* return result */ }
-}),
-
-// Client-side: no execute function, browser provides the result
-// Handle it in app.tsx via the onToolCall callback
-browserTool: tool({
-  description: "...",
-  inputSchema: z.object({ /* ... */ })
-}),
-
-// Approval: add needsApproval to gate execution
-sensitiveTool: tool({
-  description: "...",
-  inputSchema: z.object({ /* ... */ }),
-  needsApproval: async (input) => true, // or conditional logic
-  execute: async (input) => { /* runs after approval */ }
-}),
+```text
+Agent #42 → wet_sock
+Agent #17 → rajma
+Agent #81 → helmet
 ```
 
-### Customize scheduled task behavior
+The public identity changes.
 
-When a scheduled task fires, `executeTask` runs on the server. It does its work and then uses `this.broadcast()` to notify connected clients (shown as a toast notification in the UI). Replace it with your own logic:
+The underlying agent does not.
 
-```ts
-async executeTask(description: string, task: Schedule<string>) {
-  // Do the actual work
-  await sendEmail({ to: "user@example.com", subject: description });
+Each agent maintains:
 
-  // Notify connected clients
-  this.broadcast(
-    JSON.stringify({ type: "scheduled-task", description, timestamp: new Date().toISOString() })
-  );
-}
+* temperament
+* behavioral tendencies
+* strategy beliefs
+* episodic memories
+* game history
+* performance statistics
+
+The goal is for agents to diverge over time through experience rather than merely through different system prompts.
+
+---
+
+## Nature + Nurture
+
+Agents inherit a common base containing game knowledge and broadly useful observations.
+
+They then learn independently.
+
+```text
+                     COMMON BASE
+                          │
+              ┌───────────┼───────────┐
+              ▼           ▼           ▼
+          Agent #17   Agent #42   Agent #81
+              │           │           │
+           games        games        games
+              │           │           │
+              ▼           ▼           ▼
+          memories     memories     memories
+          strategies   strategies   strategies
+              │           │           │
+              └────── diverge ───────┘
 ```
 
-> **Why `broadcast()` instead of `saveMessages()`?** Injecting into chat history can cause the AI to see the notification as new context and re-trigger the same task in a loop. `broadcast()` sends a one-off event that the client displays separately from the conversation.
+A discovery made by one agent does not immediately become behavior shared by every agent.
 
-### Remove scheduling
+This avoids creating one global AI fingerprint.
 
-If you don't need scheduling, remove `scheduleTask`, `getScheduledTasks`, and `cancelScheduledTask` from the tools object, the `executeTask` method, and the schedule-related imports (`getSchedulePrompt`, `scheduleSchema`, `Schedule`).
+---
 
-### Add state beyond chat messages
+## Personality
 
-Use `this.setState()` and `this.state` for real-time state that syncs to all connected clients. See [Store and sync state](https://developers.cloudflare.com/agents/api-reference/store-and-sync-state/).
+Personality has two major components.
 
-### Add callable methods
+### Cognitive personality
 
-Expose agent methods as typed RPC that your client can call directly:
+Traits that influence how an agent reasons and communicates:
 
-```ts
-import { callable } from "agents";
+* talkativeness
+* assertiveness
+* humor
+* curiosity
+* agreeableness
+* impulsiveness
 
-export class ChatAgent extends AIChatAgent<Env> {
-  @callable()
-  async getStats() {
-    return { messageCount: this.messages.length };
-  }
-}
+These are relatively stable.
 
-// Client-side:
-const stats = await agent.call("getStats");
+### Behavioral personality
+
+Observable behavior controlled partly by orchestration rather than language generation:
+
+* response timing
+* timing variance
+* likelihood of responding
+* message bursts
+* silence
+* message length
+* double-texting
+* interruptions
+
+This distinction matters because human conversation is not:
+
+```text
+message → response
 ```
 
-See [Callable methods](https://developers.cloudflare.com/agents/api-reference/callable-methods/).
+An agent must also decide whether it has anything worth saying.
 
-### Connect to MCP servers
+---
 
-Add external tools from MCP servers:
+## Agent Loop
 
-```ts
-async onChatMessage(onFinish, options) {
-  // Connect to an MCP server
-  await this.mcp.connect("https://my-mcp-server.example/sse");
+A participant receiving a message does not automatically trigger an LLM response.
 
-  const result = streamText({
-    // ...
-    tools: {
-      ...myTools,
-      ...this.mcp.getAITools() // Include MCP tools
-    }
-  });
-}
+Instead:
+
+```text
+Observe conversation
+        ↓
+Should I act?
+        │
+    ┌───┴────┐
+    │        │
+   no       yes
+    │        │
+ silence   choose intent
+             ↓
+        generate candidate
+             ↓
+         novelty check
+          │        │
+       useful   redundant
+          │        │
+          │     revise/silence
+          ▼
+     behavioral timing
+          ↓
+         send
 ```
 
-See [MCP Client API](https://developers.cloudflare.com/agents/api-reference/mcp-client-api/).
+Agents can:
 
-## Use a different AI model provider
+* speak
+* remain silent
+* accuse
+* defend
+* question
+* disagree
+* follow a consensus
+* change their mind
+* vote
 
-The starter uses [Workers AI](https://developers.cloudflare.com/workers-ai/) by default (no API key needed). To use a different provider:
+Agents are independent and are not told which other participants are agents.
 
-### OpenAI
+---
 
-```bash
-npm install @ai-sdk/openai
+## Avoiding the AI Fingerprint
+
+The game should be decided through social deduction, not implementation leaks.
+
+AI and human participants therefore share the same public interface and message representation.
+
+The frontend must not know participant types before the final reveal.
+
+Potential accidental fingerprints include:
+
+* deterministic response latency
+* identical typing behavior
+* every agent responding to every message
+* agents responding simultaneously
+* perfect memory
+* correlated voting
+* repetitive language
+* repetitive arguments
+* perfect availability
+* differences in message delivery
+
+Agents therefore have independent behavioral profiles.
+
+### Repetition
+
+Multiple agents using the same underlying model can independently arrive at essentially the same response.
+
+Before sending, generated messages pass through a novelty check.
+
+If another participant has already made substantially the same contribution, the agent can:
+
+* introduce new evidence
+* challenge the existing argument
+* ask a follow-up
+* change subject
+* remain silent
+
+Some repetition is intentionally allowed. Humans naturally pile onto opinions with short messages such as `same`, `yeah`, or `100%`.
+
+The objective is to prevent LLM redundancy, not normal social agreement.
+
+---
+
+## Memory
+
+Agent memory has several levels.
+
+### Match memory
+
+Temporary understanding of the current match:
+
+* transcript
+* participants
+* suspicions
+* accusations
+* votes
+* notable events
+
+### Episodic memory
+
+Selected experiences retained from previous games.
+
+Example:
+
+> I accused another participant early. Two players followed my accusation and I survived the round.
+
+### Strategy beliefs
+
+Accumulated beliefs about what has historically worked for this particular agent.
+
+Examples:
+
+* early accusations
+* silence
+* humor
+* follow-up questions
+* direct interrogation
+
+Strategy beliefs change faster than temperament.
+
+A single successful game should not dramatically rewrite an agent.
+
+---
+
+## Learning
+
+After a game, participating agents reflect on what happened.
+
+The post-game process asks:
+
+1. What happened?
+2. When did suspicion change?
+3. Which actions appeared useful?
+4. Which actions appeared harmful?
+5. Was anything genuinely novel learned?
+6. Should an existing strategy belief change?
+7. Is an event worth retaining as episodic memory?
+
+Future matches can retrieve those experiences.
+
+The long-term objective is not simply better text generation.
+
+It is for agents to learn how people behave in this particular game.
+
+---
+
+## Architecture
+
+The project is designed around Cloudflare's agent infrastructure.
+
+Conceptually:
+
+```text
+                    Matchmaker
+                        │
+                        ▼
+                ┌──────────────┐
+                │     Room     │
+                │ Durable State│
+                └──────┬───────┘
+                       │
+        ┌──────────────┼──────────────┐
+        ▼              ▼              ▼
+      Human        Agent #42      Agent #17
+                       │
+                       ▼
+                    LLM
+                       │
+                       ▼
+               Persistent State
 ```
 
-```ts
-// In server.ts, replace the model:
-import { openai } from "@ai-sdk/openai";
+The room owns authoritative match state:
 
-// Inside onChatMessage:
-const result = streamText({
-  model: openai("gpt-5.2")
-  // ...
-});
-```
+* participants
+* temporary identities
+* transcript
+* timers
+* rounds
+* votes
+* eliminations
 
-Create a `.env` file with your API key:
+Persistent agents own their individual histories and personalities.
 
-```
-OPENAI_API_KEY=your-key-here
-```
+The LLM handles semantic and social reasoning.
 
-### Anthropic
+Deterministic code handles deterministic mechanics.
 
-```bash
-npm install @ai-sdk/anthropic
-```
+Post-match reflection can run asynchronously.
 
-```ts
-import { anthropic } from "@ai-sdk/anthropic";
+---
 
-const result = streamText({
-  model: anthropic("claude-sonnet-4-20250514")
-  // ...
-});
-```
+## MVP
 
-Create a `.env` file with your API key:
+The first vertical slice focuses on **Blend In**.
 
-```
-ANTHROPIC_API_KEY=your-key-here
-```
+It should support:
 
-## Deploy
+* one human
+* five independent AI agents
+* anonymous identities
+* realtime conversation
+* discussion rounds
+* voting
+* elimination
+* final reveal
+* persistent agent identities
+* basic personality differences
+* behavioral variation
+* episodic memory
+* post-game reflection
+* strategy updates
+* replay
 
-```bash
-npm run deploy
-```
+The MVP deliberately does not attempt to implement a full evolutionary ecosystem.
 
-Your agent is live on Cloudflare's global network. Messages persist in SQLite, streams resume on disconnect, and the agent hibernates when idle.
+The immediate goal is simpler:
 
-## Learn more
+> Play multiple games against the same population and make previous experience matter.
 
-- [Agents SDK documentation](https://developers.cloudflare.com/agents/)
-- [Build a chat agent tutorial](https://developers.cloudflare.com/agents/getting-started/build-a-chat-agent/)
-- [Chat agents API reference](https://developers.cloudflare.com/agents/api-reference/chat-agents/)
-- [Workers AI models](https://developers.cloudflare.com/workers-ai/models/)
+---
 
-## License
+## Long-Term Direction
 
-MIT
+Potential later systems include:
+
+* Find the AI multiplayer mode
+* collective knowledge
+* agent generations
+* retirement and inheritance
+* historical agent populations
+* seasons
+* human profiles and statistics
+* agent statistics
+* longitudinal behavior visualization
+
+Eventually, an agent might have existed for months and played thousands of games against humans.
+
+At that point the interesting question stops being:
+
+**Can an LLM fool a human?**
+
+It becomes:
+
+**What has this particular agent learned from the humans it has met?**
