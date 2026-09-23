@@ -1,0 +1,441 @@
+{
+  "humanWin": {
+    "matchId": "a604f760-d8d8-4d59-bedd-d3c76f01ad6f",
+    "mode": "FIND_THE_AI",
+    "role": "INFILTRATOR",
+    "result": "caught",
+    "survivalMs": 14540,
+    "eliminationRound": 2,
+    "votesReceived": [
+      {
+        "round": 1,
+        "count": 0
+      },
+      {
+        "round": 2,
+        "count": 4
+      }
+    ],
+    "votesCast": [],
+    "conversation": [
+      {
+        "id": "046e9f5a-d765-44f9-89e1-815d58497c96",
+        "sender": "e9cd28c0-bfb3-42f7-9c8e-5d3782f13762",
+        "text": "Why is everyone so confident already?",
+        "at": 1790165368000,
+        "round": 1
+      },
+      {
+        "id": "46f11553-9ed1-44a7-b0fb-410968cbf840",
+        "sender": "6fea1f34-20b9-427d-b777-0971a813d20a",
+        "text": "I want to hear a reason before we vote.",
+        "at": 1790165368000,
+        "round": 1
+      },
+      {
+        "id": "416f15f1-2a86-4fc9-93ea-cc260e6e6848",
+        "sender": "ce61c4e2-68ff-433e-8eee-7cf3a40b616a",
+        "text": "same, but mostly because that answer changed the temperature in here",
+        "at": 1790165382000,
+        "round": 1
+      }
+    ],
+    "events": [
+      {
+        "kind": "message",
+        "participantId": "e9cd28c0-bfb3-42f7-9c8e-5d3782f13762",
+        "text": "Why is everyone so confident already?",
+        "at": 1790165368000,
+        "round": 1
+      },
+      {
+        "kind": "message",
+        "participantId": "6fea1f34-20b9-427d-b777-0971a813d20a",
+        "text": "I want to hear a reason before we vote.",
+        "at": 1790165368000,
+        "round": 1
+      },
+      {
+        "kind": "message",
+        "participantId": "ce61c4e2-68ff-433e-8eee-7cf3a40b616a",
+        "text": "same, but mostly because that answer changed the temperature in here",
+        "at": 1790165382000,
+        "round": 1
+      },
+      {
+        "kind": "elimination",
+        "targetParticipantId": "e9cd28c0-bfb3-42f7-9c8e-5d3782f13762",
+        "at": 1790165382929,
+        "round": 1
+      },
+      {
+        "kind": "elimination",
+        "targetParticipantId": "ce61c4e2-68ff-433e-8eee-7cf3a40b616a",
+        "at": 1790165382929,
+        "round": 2
+      }
+    ]
+  },
+  "aiWin": {
+    "matchId": "3872dc32-efb8-4e3b-af6c-c381c3d2294e",
+    "mode": "FIND_THE_AI",
+    "role": "INFILTRATOR",
+    "result": "blended",
+    "survivalMs": 10470,
+    "eliminationRound": null,
+    "votesReceived": [
+      {
+        "round": 1,
+        "count": 0
+      },
+      {
+        "round": 2,
+        "count": 0
+      },
+      {
+        "round": 3,
+        "count": 0
+      },
+      {
+        "round": 4,
+        "count": 0
+      }
+    ],
+    "votesCast": [
+      {
+        "round": 4,
+        "target": "b254ae76-9ee1-47d7-84f8-4faa28a1494c"
+      }
+    ],
+    "conversation": [],
+    "events": [
+      {
+        "kind": "elimination",
+        "targetParticipantId": "9c4b590e-0784-40cf-a1e4-30b8d89537e7",
+        "at": 1790165394133,
+        "round": 1
+      },
+      {
+        "kind": "elimination",
+        "targetParticipantId": "27ee3055-e729-4f1c-a7be-6e0c3521e23b",
+        "at": 1790165394133,
+        "round": 2
+      },
+      {
+        "kind": "elimination",
+        "targetParticipantId": "b27306e3-f376-478d-a8aa-dab40787353b",
+        "at": 1790165394133,
+        "round": 3
+      },
+      {
+        "kind": "elimination",
+        "targetParticipantId": "b254ae76-9ee1-47d7-84f8-4faa28a1494c",
+        "at": 1790165394133,
+        "round": 4
+      },
+      {
+        "kind": "vote",
+        "participantId": "076ec9fb-240f-43cc-a9a1-c16e3c36c836",
+        "targetParticipantId": "b254ae76-9ee1-47d7-84f8-4faa28a1494c",
+        "at": 1790165394133,
+        "round": 4
+      }
+    ]
+  },
+  "crossMode": {
+    "agent": {
+      "agentId": 172,
+      "model": "@cf/qwen/qwen3-30b-a3b-fp8",
+      "temperament": {
+        "talkativeness": 0.4,
+        "assertiveness": 0.26,
+        "humor": 0.12,
+        "curiosity": 0.88,
+        "agreeableness": 0.74,
+        "impulsiveness": 0.67
+      },
+      "behavior": {
+        "responseDelayMean": 5.64,
+        "responseDelayVariance": 5.71,
+        "doubleTextFrequency": 0.096,
+        "emojiFrequency": 0.021599999999999998,
+        "messageLengthBias": 0.32,
+        "responseProbability": 0.5700000000000001
+      },
+      "strategy": {
+        "earlyAccusation": 0.2799999999999998,
+        "silence": 0.5,
+        "humor": 0.5,
+        "directQuestions": 0.5,
+        "followUpQuestions": 0.5,
+        "personalStories": 0.6100000000000001
+      },
+      "episodes": [
+        {
+          "room": "0ef428b2-c2a1-40af-a8bb-46e2d4bce85f",
+          "lesson": "Development fixture for Agent #172: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103213953,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "personalStories": 0.01
+          },
+          "source": "fixture",
+          "mode": "BLEND_IN",
+          "role": "HUNTER"
+        },
+        {
+          "room": "d72e8ece-103f-499f-974c-434af7f0c0f3",
+          "lesson": "Development fixture for Agent #172: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103218286,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "personalStories": 0.01
+          },
+          "source": "fixture",
+          "mode": "BLEND_IN",
+          "role": "HUNTER"
+        },
+        {
+          "room": "4568e695-6b52-4e63-9c29-08e978fec2b7",
+          "lesson": "Development fixture for Agent #172: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103323003,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "personalStories": 0.01
+          },
+          "source": "fixture",
+          "mode": "BLEND_IN",
+          "role": "HUNTER"
+        },
+        {
+          "room": "acc904b3-f0ba-4baa-b3fa-72c287a1acb6",
+          "lesson": "Development fixture for Agent #172: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103408750,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "personalStories": 0.01
+          },
+          "source": "fixture",
+          "mode": "BLEND_IN",
+          "role": "HUNTER"
+        },
+        {
+          "room": "de96355e-aa1f-48d6-8cb9-d7b96bfbdac2",
+          "lesson": "Development fixture for Agent #172: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103502700,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "personalStories": 0.01
+          },
+          "source": "fixture",
+          "mode": "BLEND_IN",
+          "role": "HUNTER"
+        },
+        {
+          "room": "de33465c-17a3-4258-9b60-9549c8d51a9b",
+          "lesson": "Development fixture for Agent #172: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103522786,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "personalStories": 0.01
+          },
+          "source": "fixture",
+          "mode": "BLEND_IN",
+          "role": "HUNTER"
+        },
+        {
+          "room": "537682e5-3b4c-4ff3-ae4a-c0ad04c3ed3a",
+          "lesson": "Development fixture for Agent #172: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103643543,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "personalStories": 0.01
+          },
+          "source": "fixture",
+          "mode": "BLEND_IN",
+          "role": "HUNTER"
+        },
+        {
+          "room": "80bfe11c-cb5d-49ed-b668-ff19591ec2e3",
+          "lesson": "Development fixture for Agent #172: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103865580,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "personalStories": 0.01
+          },
+          "source": "fixture",
+          "mode": "BLEND_IN",
+          "role": "HUNTER"
+        },
+        {
+          "room": "687c40d9-ffb1-44a7-b31e-51451a727fa8",
+          "mode": "FIND_THE_AI",
+          "role": "INFILTRATOR",
+          "lesson": "Development fixture for Agent #172: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790113895385,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "personalStories": 0.01
+          },
+          "source": "fixture"
+        },
+        {
+          "room": "a604f760-d8d8-4d59-bedd-d3c76f01ad6f",
+          "mode": "FIND_THE_AI",
+          "role": "INFILTRATOR",
+          "lesson": "Development fixture for Agent #172: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790165382955,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "personalStories": 0.01
+          },
+          "source": "fixture"
+        },
+        {
+          "room": "6e222aef-bf04-49c3-8db2-0b8b77567146",
+          "mode": "BLEND_IN",
+          "role": "HUNTER",
+          "lesson": "Development fixture for Agent #172: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790165398283,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "personalStories": 0.01
+          },
+          "source": "fixture"
+        }
+      ],
+      "history": [
+        {
+          "room": "0ef428b2-c2a1-40af-a8bb-46e2d4bce85f",
+          "won": false,
+          "at": 1790103213868,
+          "mode": "BLEND_IN",
+          "role": "HUNTER"
+        },
+        {
+          "room": "d72e8ece-103f-499f-974c-434af7f0c0f3",
+          "won": true,
+          "at": 1790103218208,
+          "mode": "BLEND_IN",
+          "role": "HUNTER"
+        },
+        {
+          "room": "4568e695-6b52-4e63-9c29-08e978fec2b7",
+          "won": true,
+          "at": 1790103322931,
+          "mode": "BLEND_IN",
+          "role": "HUNTER"
+        },
+        {
+          "room": "acc904b3-f0ba-4baa-b3fa-72c287a1acb6",
+          "won": true,
+          "at": 1790103408656,
+          "mode": "BLEND_IN",
+          "role": "HUNTER"
+        },
+        {
+          "room": "de96355e-aa1f-48d6-8cb9-d7b96bfbdac2",
+          "won": true,
+          "at": 1790103502600,
+          "mode": "BLEND_IN",
+          "role": "HUNTER"
+        },
+        {
+          "room": "de33465c-17a3-4258-9b60-9549c8d51a9b",
+          "won": true,
+          "at": 1790103522708,
+          "mode": "BLEND_IN",
+          "role": "HUNTER"
+        },
+        {
+          "room": "537682e5-3b4c-4ff3-ae4a-c0ad04c3ed3a",
+          "won": true,
+          "at": 1790103643487,
+          "mode": "BLEND_IN",
+          "role": "HUNTER"
+        },
+        {
+          "room": "80bfe11c-cb5d-49ed-b668-ff19591ec2e3",
+          "won": true,
+          "at": 1790103865528,
+          "mode": "BLEND_IN",
+          "role": "HUNTER"
+        },
+        {
+          "room": "687c40d9-ffb1-44a7-b31e-51451a727fa8",
+          "won": false,
+          "at": 1790113895368,
+          "mode": "FIND_THE_AI",
+          "role": "INFILTRATOR"
+        },
+        {
+          "room": "a604f760-d8d8-4d59-bedd-d3c76f01ad6f",
+          "won": false,
+          "at": 1790165382940,
+          "mode": "FIND_THE_AI",
+          "role": "INFILTRATOR"
+        },
+        {
+          "room": "6e222aef-bf04-49c3-8db2-0b8b77567146",
+          "won": true,
+          "at": 1790165398193,
+          "mode": "BLEND_IN",
+          "role": "HUNTER"
+        }
+      ],
+      "games": 11,
+      "wins": 8
+    },
+    "experience": {
+      "matchId": "6e222aef-bf04-49c3-8db2-0b8b77567146",
+      "mode": "BLEND_IN",
+      "role": "HUNTER",
+      "result": "caught",
+      "survivalMs": 522,
+      "eliminationRound": null,
+      "votesReceived": [
+        {
+          "round": 1,
+          "count": 0
+        }
+      ],
+      "votesCast": [
+        {
+          "round": 1,
+          "target": "e1dd0208-7d1f-4e04-95cb-70c40c099308"
+        }
+      ],
+      "conversation": [],
+      "events": [
+        {
+          "kind": "elimination",
+          "targetParticipantId": "e1dd0208-7d1f-4e04-95cb-70c40c099308",
+          "at": 1790165398106,
+          "round": 1
+        },
+        {
+          "kind": "vote",
+          "participantId": "2e501356-8221-46da-8c16-671f530c0af4",
+          "targetParticipantId": "e1dd0208-7d1f-4e04-95cb-70c40c099308",
+          "at": 1790165398106,
+          "round": 1
+        }
+      ]
+    }
+  },
+  "tests": [
+    "lobby",
+    "concurrent six joins",
+    "five independent sessions",
+    "reconnect",
+    "private serialization",
+    "broadcast",
+    "duplicate and invalid messages",
+    "agent scheduler",
+    "multi-round voting",
+    "eliminated spectator",
+    "both outcomes",
+    "cross-mode agent storage and personality",
+    "experience history"
+  ]
+}

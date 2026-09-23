@@ -11,11 +11,16 @@ import {
   shuffle,
   SYMBOLS,
   transition,
+  outcomeFor,
+  type ParticipantBelief,
+  type RoomEvent,
   type PrivatePlayer,
   type RoomState
 } from "./game";
 import type { ClientAction } from "./shared";
-import { adminApi } from './admin-api';
+import { adminApi } from "./admin-api";
+import { MODES, matchContext } from "./modes";
+export { Matchmaker } from "./matchmaker";
 export { PersistentPlayer };
 
 const json = (value: unknown, status = 200) =>
@@ -94,19 +99,173 @@ export class GameRoom extends DurableObject<Env> {
       JSON.stringify(s)
     );
     if (publish) {
-      const data = JSON.stringify({ type: "state", state: publicState(s) });
       for (const socket of this.ctx.getWebSockets()) {
         try {
-          socket.send(data);
+          const session = socket.deserializeAttachment()?.session ?? s.owner;
+          if (!this.member(s, session)) continue;
+          socket.send(
+            JSON.stringify({
+              type: "state",
+              state: publicState(s, Date.now(), session)
+            })
+          );
         } catch {
           socket.close(1011, "Reconnect");
         }
       }
     }
   }
+  member(s: RoomState, session: string) {
+    return (
+      s.players.find((p) => p.session === session) ??
+      (s.mode !== "FIND_THE_AI" && s.owner === session
+        ? s.players.find((p) => p.agentId === undefined)
+        : undefined)
+    );
+  }
+  hasSession(session: string) {
+    const s = this.read();
+    return (
+      !!s &&
+      !["reveal", "interrupted"].includes(s.phase) &&
+      !!this.member(s, session) &&
+      (s.expiresAt ?? 0) > Date.now()
+    );
+  }
+  async joinWaiting(roomId: string, session: string, fast: boolean) {
+    let s = this.read();
+    const now = Date.now();
+    if (!s) {
+      s = {
+        roomId,
+        owner: "",
+        mode: "FIND_THE_AI",
+        revision: 0,
+        phase: "waiting",
+        round: 1,
+        maxRounds: 4,
+        deadline: 0,
+        expiresAt: now + 24 * 60 * 60 * 1000,
+        players: [],
+        messages: [],
+        votes: {},
+        results: [],
+        pending: [],
+        reflection: {},
+        reflectionBusy: {},
+        durations: fast
+          ? { arrival: 1200, discussion: 8000, voting: 6000, elimination: 1800 }
+          : {
+              arrival: 4500,
+              discussion: 65000,
+              voting: 18000,
+              elimination: 5500
+            }
+      };
+    }
+    if (s.phase !== "waiting") return false;
+    if (this.member(s, session)) return true;
+    s.players = s.players.filter(
+      (p) => !p.disconnectedAt || now - p.disconnectedAt < 15000
+    );
+    if (s.players.length >= MODES.FIND_THE_AI.humans) return false;
+    s.players.push({
+      id: crypto.randomUUID(),
+      name: "",
+      symbol: "",
+      eliminated: false,
+      session,
+      disconnectedAt: now,
+      nextThink: now,
+      busyUntil: 0,
+      lastSent: 0,
+      suspicion: {},
+      hypothesis: ""
+    });
+    this.save(s);
+    await this.ctx.storage.setAlarm(now + 500);
+    return true;
+  }
+  async startWaiting() {
+    const s = this.read();
+    if (
+      !s ||
+      s.phase !== "waiting" ||
+      s.players.length !== MODES.FIND_THE_AI.humans ||
+      s.players.some((p) => p.disconnectedAt)
+    )
+      return;
+    const token = crypto.randomUUID();
+    s.phase = "starting";
+    s.startToken = token;
+    s.deadline = Date.now() + 20000;
+    this.save(s);
+    try {
+      const agentId = shuffle(POPULATION)[0];
+      const profile = await (
+        await playerStub(this.env, agentId)
+      ).profile(agentId);
+      const current = this.read();
+      if (
+        !current ||
+        current.startToken !== token ||
+        current.phase !== "starting"
+      )
+        return;
+      if (
+        current.players.length !== MODES.FIND_THE_AI.humans ||
+        current.players.some((p) => p.disconnectedAt)
+      ) {
+        current.phase = "waiting";
+        current.deadline = 0;
+        this.save(current);
+        return;
+      }
+      const now = Date.now();
+      current.players.push({
+        id: crypto.randomUUID(),
+        name: "",
+        symbol: "",
+        eliminated: false,
+        agentId,
+        behavior: profile.behavior,
+        nextThink: now,
+        busyUntil: 0,
+        lastSent: 0,
+        suspicion: {},
+        hypothesis: ""
+      });
+      const names = shuffle(NAMES),
+        symbols = shuffle(SYMBOLS);
+      current.players = shuffle(current.players).map((p, i) => ({
+        ...p,
+        id: crypto.randomUUID(),
+        name: names[i],
+        symbol: symbols[i]
+      }));
+      const ai = current.players.find((p) => p.agentId !== undefined)!;
+      current.reflection[ai.id] = {
+        games: profile.games,
+        learned: false,
+        status: "pending"
+      };
+      current.phase = "arrival";
+      current.startedAt = now;
+      current.deadline = now + current.durations.arrival;
+      this.save(current);
+    } catch {
+      const current = this.read();
+      if (current?.startToken === token) {
+        current.phase = "waiting";
+        current.deadline = 0;
+        current.serviceNotice = "The room could not start. Retrying…";
+        this.save(current);
+      }
+    }
+  }
   async init(roomId: string, owner: string, fast = false) {
     if (this.read()) return;
-    const ids = shuffle(POPULATION).slice(0, 5);
+    const ids = shuffle(POPULATION).slice(0, MODES.BLEND_IN.agents);
     const profiles = await Promise.all(
       ids.map(async (id) => (await playerStub(this.env, id)).profile(id))
     );
@@ -121,11 +280,13 @@ export class GameRoom extends DurableObject<Env> {
       symbol: symbols[i],
       eliminated: false,
       agentId,
+      session: agentId === undefined ? owner : undefined,
       behavior: profiles.find((p) => p.agentId === agentId)?.behavior,
       nextThink: now,
       busyUntil: 0,
       lastSent: 0,
       suspicion: {},
+      beliefs: {},
       hypothesis: ""
     }));
     const durations = fast
@@ -133,6 +294,8 @@ export class GameRoom extends DurableObject<Env> {
       : { arrival: 4500, discussion: 65000, voting: 18000, elimination: 5500 };
     const s: RoomState = {
       roomId,
+      mode: "BLEND_IN",
+      startedAt: now,
       owner,
       expiresAt: now + 24 * 60 * 60 * 1000,
       revision: 0,
@@ -158,22 +321,78 @@ export class GameRoom extends DurableObject<Env> {
             }
           ])
       ),
-      reflectionBusy: {}
+      reflectionBusy: {},
+      eventVersion: 0,
+      decisionTrace: {}
     };
     this.save(s);
     await this.ctx.storage.setAlarm(now + 500);
   }
   observe(s: RoomState, p: PrivatePlayer): Observation {
+    const active = s.players.filter(
+      (player) => player.id !== p.id && !player.eliminated
+    );
+    const beliefs: ParticipantBelief[] = active.map(
+      (participant) =>
+        p.beliefs?.[participant.id] ?? {
+          participantId: participant.id,
+          humanProbability:
+            MODES[s.mode ?? "BLEND_IN"].role === "INFILTRATOR"
+              ? 1
+              : (p.suspicion[participant.id] ?? 0.5),
+          threat: 0.5,
+          confidence: 0.1,
+          reasons: [],
+          lastUpdatedAt: Date.now()
+        }
+    );
+    const events: RoomEvent[] = [
+      ...s.messages.slice(-20).map((message) => ({
+        kind: "message" as const,
+        participantId: message.sender,
+        text: message.text,
+        at: message.at,
+        round: message.round
+      })),
+      ...s.results.slice(-4).map((result) => ({
+        kind: "elimination" as const,
+        targetParticipantId: result.eliminated,
+        at: Date.now(),
+        round: result.round
+      })),
+      ...Object.entries(s.ballots ?? {}).flatMap(([round, votes]) =>
+        Object.entries(votes)
+          .filter(([sender]) => sender === p.id)
+          .map(([, target]) => ({
+            kind: "vote" as const,
+            participantId: p.id,
+            targetParticipantId: target,
+            at: Date.now(),
+            round: Number(round)
+          }))
+      )
+    ];
     return {
       self: p.id,
+      context: matchContext(s.roomId, s.mode),
       participants: publicState(s).participants,
       messages: s.messages.slice(-60),
       results: s.results,
       phase: s.phase === "voting" ? "voting" : "discussion",
       round: s.round,
-      suspicion: p.suspicion,
-      hypothesis: p.hypothesis
-      , ownVotes: Object.entries(s.ballots ?? {}).filter(([, votes]) => votes[p.id]).map(([round, votes]) => ({ round: Number(round), target: votes[p.id] }))
+      suspicion: Object.fromEntries(
+        beliefs.map((belief) => [belief.participantId, belief.humanProbability])
+      ),
+      hypothesis: p.hypothesis,
+      beliefs,
+      events,
+      eventVersion: s.eventVersion ?? s.revision,
+      ownVotes: Object.entries(s.ballots ?? {})
+        .filter(([, votes]) => votes[p.id])
+        .map(([round, votes]) => ({
+          round: Number(round),
+          target: votes[p.id]
+        }))
     };
   }
   async think(snapshot: RoomState, original: PrivatePlayer) {
@@ -197,18 +416,52 @@ export class GameRoom extends DurableObject<Env> {
       p.busyUntil = 0;
       p.failures = 0;
       p.suspicion = decision.suspicion;
+      p.beliefs = Object.fromEntries(
+        (decision.beliefs ?? []).map((belief) => [belief.participantId, belief])
+      );
       p.hypothesis = decision.hypothesis;
-      const delay = behaviorDelay(p.behavior!);
-      p.nextThink = now + delay + 4000 + Math.random() * 7000;
-      if (s.phase === "voting" && decision.target) {
+      const delay = Math.min(
+        behaviorDelay(p.behavior!),
+        Math.max(0, snapshot.deadline - now - 1000)
+      );
+      p.observedRevision = snapshot.eventVersion ?? snapshot.revision;
+      p.nextThink = now + delay + 2500 + Math.random() * 9000;
+      s.decisionTrace ??= {};
+      s.decisionTrace[p.id] = {
+        agentId: p.agentId!,
+        observed:
+          this.observe(snapshot, original).events?.at(-1)?.text ?? "room event",
+        beliefs: decision.beliefs ?? [],
+        action: decision.action,
+        intent: decision.intent,
+        reason: decision.reason,
+        candidate: decision.text || undefined,
+        novelty: decision.novelty,
+        delay,
+        at: now
+      };
+      if (
+        s.phase === "voting" &&
+        decision.action === "VOTE" &&
+        decision.target
+      ) {
         s.pending.push({
           sender: p.id,
           target: decision.target,
-          at: Math.min(s.deadline - 250, now + delay),
+          at: Math.min(s.deadline - 1000, now + delay),
           round: s.round,
           phase: s.phase
         });
-      } else if (decision.intent !== "silent" && decision.text.trim()) {
+      } else if (
+        s.phase === "discussion" &&
+        decision.action === "MESSAGE" &&
+        decision.text.trim()
+      ) {
+        if ((s.chainDepth ?? 0) >= 4 || (p.activityBudget ?? 1) <= 0) {
+          p.nextThink = now + delay + 6000;
+          this.save(s, false);
+          return;
+        }
         s.pending.push({
           sender: p.id,
           text: decision.text,
@@ -216,9 +469,11 @@ export class GameRoom extends DurableObject<Env> {
           round: s.round,
           phase: s.phase
         });
+        p.activityBudget = Math.max(0, (p.activityBudget ?? 1) - 1);
         if (
           decision.followUp &&
-          Math.random() < p.behavior!.doubleTextFrequency
+          Math.random() < p.behavior!.doubleTextFrequency &&
+          (p.consecutiveMessages ?? 0) === 0
         )
           s.pending.push({
             sender: p.id,
@@ -266,7 +521,28 @@ export class GameRoom extends DurableObject<Env> {
       const receipt = await stub.recordGame(
         original.agentId!,
         snapshot.roomId,
-        snapshot.outcome!
+        snapshot.outcome!,
+        {
+          matchId: snapshot.roomId,
+          mode: snapshot.mode ?? "BLEND_IN",
+          role: MODES[snapshot.mode ?? "BLEND_IN"].role,
+          result: snapshot.outcome!,
+          survivalMs: Math.max(
+            0,
+            (original.eliminatedAt ?? snapshot.finishedAt ?? Date.now()) -
+              (snapshot.startedAt ?? snapshot.finishedAt ?? Date.now())
+          ),
+          eliminationRound:
+            snapshot.results.find((r) => r.eliminated === original.id)?.round ??
+            (original.eliminated ? snapshot.round : null),
+          votesReceived: snapshot.results.map((r) => ({
+            round: r.round,
+            count: r.counts[original.id] ?? 0
+          })),
+          votesCast: this.observe(snapshot, original).ownVotes,
+          conversation: snapshot.messages,
+          events: this.observe(snapshot, original).events ?? []
+        }
       );
       const recorded = this.read();
       if (!recorded || recorded.finishedAt !== snapshot.finishedAt) return;
@@ -274,7 +550,9 @@ export class GameRoom extends DurableObject<Env> {
       this.save(recorded);
       const result = await stub.reflect(original.agentId!, snapshot.roomId, {
         observation: this.observe(snapshot, original),
-        humanId: snapshot.players.find((p) => p.agentId === undefined)!.id,
+        humanIds: snapshot.players
+          .filter((p) => p.agentId === undefined)
+          .map((p) => p.id),
         outcome: snapshot.outcome!
       });
       const s = this.read();
@@ -310,6 +588,66 @@ export class GameRoom extends DurableObject<Env> {
       return;
     }
     let changed = false;
+    if (s.phase === "waiting" || s.phase === "starting") {
+      const connected = new Set(
+        this.ctx
+          .getWebSockets()
+          .filter((ws) => ws.readyState === 1)
+          .map((ws) => ws.deserializeAttachment()?.session)
+      );
+      for (const p of s.players)
+        if (!p.disconnectedAt && !connected.has(p.session))
+          p.disconnectedAt = now;
+      s.players = s.players.filter(
+        (p) => !p.disconnectedAt || now - p.disconnectedAt < 15000
+      );
+      if (
+        s.phase === "starting" &&
+        (now >= s.deadline ||
+          s.players.length < MODES.FIND_THE_AI.humans ||
+          s.players.some((p) => p.disconnectedAt))
+      ) {
+        s.phase = "waiting";
+        s.startToken = undefined;
+        s.deadline = 0;
+      }
+      this.save(s);
+      await this.startWaiting();
+      await this.ctx.storage.setAlarm(
+        s.players.length ? now + 1000 : s.expiresAt!
+      );
+      return;
+    }
+    // After a minute away, forfeit the seat. Deadlines still advance even with missing votes.
+    if (!["reveal", "interrupted", "elimination"].includes(s.phase)) {
+      for (const p of s.players) {
+        if (
+          p.agentId === undefined &&
+          !p.eliminated &&
+          p.disconnectedAt &&
+          now - p.disconnectedAt >= 60000
+        ) {
+          p.eliminated = true;
+          p.eliminatedAt = now;
+          changed = true;
+          delete s.votes[p.id];
+          for (const [voter, target] of Object.entries(s.votes))
+            if (target === p.id) delete s.votes[voter];
+          s.pending = s.pending.filter(
+            (a) => a.sender !== p.id && a.target !== p.id
+          );
+        }
+      }
+      if (changed) {
+        s.eventVersion = (s.eventVersion ?? 0) + 1;
+        s.outcome = outcomeFor(s);
+        if (s.outcome) {
+          s.phase = "elimination";
+          s.deadline = now + s.durations.elimination;
+          s.pending = [];
+        }
+      }
+    }
     if (
       s.phase !== "reveal" &&
       s.phase !== "interrupted" &&
@@ -329,7 +667,11 @@ export class GameRoom extends DurableObject<Env> {
     }
     const jobs: PrivatePlayer[] = [];
     if (s.phase === "discussion" || s.phase === "voting") {
-      for (const p of s.players) {
+      for (const p of shuffle(s.players)) {
+        if (jobs.length >= 2) break;
+        const eventChanged =
+          (p.observedRevision ?? -1) < (s.eventVersion ?? s.revision);
+        const idleEnough = now - (p.lastMessageAt ?? 0) > 12000;
         if (
           p.agentId === undefined ||
           p.eliminated ||
@@ -338,11 +680,13 @@ export class GameRoom extends DurableObject<Env> {
           s.pending.some((a) => a.sender === p.id)
         )
           continue;
+        if (!eventChanged && !idleEnough) continue;
         if (s.phase === "voting" && s.votes[p.id]) continue;
         p.nextThink = now + behaviorDelay(p.behavior!);
         if (
           s.phase === "discussion" &&
           ((p.decisions ?? 0) >= 4 ||
+            (p.activityBudget ?? 1) <= 0 ||
             Math.random() > p.behavior!.responseProbability)
         )
           continue;
@@ -406,7 +750,14 @@ export class GameRoom extends DurableObject<Env> {
             (await playerStub(this.env, p.agentId!)).profile(p.agentId!)
           )
       );
-      return json({ room: s, agents });
+      const experiences = await Promise.all(
+        s.players
+          .filter((p) => p.agentId !== undefined)
+          .map(async (p) =>
+            (await playerStub(this.env, p.agentId!)).experience(s.roomId)
+          )
+      );
+      return json({ room: s, agents, experiences });
     }
     if (url.pathname.includes("/dev/")) {
       if (!devAllowed(request, this.env))
@@ -414,6 +765,14 @@ export class GameRoom extends DurableObject<Env> {
       if (request.method !== "POST")
         return json({ error: "Method not allowed" }, 405);
       const input = await body(request);
+      if (url.pathname.endsWith("/dev/expire-disconnects")) {
+        const latest = this.read()!;
+        for (const p of latest.players)
+          if (p.disconnectedAt) p.disconnectedAt = Date.now() - 60001;
+        this.save(latest);
+        await this.ctx.storage.setAlarm(Date.now() + 50);
+        return json({ ok: true });
+      }
       if (url.pathname.endsWith("/dev/advance")) {
         const latest = this.read()!;
         transition(latest, Date.now());
@@ -451,6 +810,11 @@ export class GameRoom extends DurableObject<Env> {
         return json(publicState(this.read()!));
       }
       if (url.pathname.endsWith("/dev/reset")) {
+        if (s.mode === "FIND_THE_AI")
+          return json(
+            { error: "Leave and matchmake a new multiplayer room." },
+            409
+          );
         for (const ws of this.ctx.getWebSockets()) ws.close(1012, "Room reset");
         this.ctx.storage.sql.exec("DELETE FROM room");
         await this.ctx.storage.deleteAlarm();
@@ -459,23 +823,50 @@ export class GameRoom extends DurableObject<Env> {
       }
       return json({ error: "Not found" }, 404);
     }
-    if (!cookie(request) || cookie(request) !== s.owner)
+    const session = cookie(request),
+      member = this.member(s, session);
+    if (!session || !member)
       return json(
         { error: "This room belongs to another session. Start a new match." },
         403
       );
+    if (url.pathname.endsWith("/leave") && request.method === "POST") {
+      if (!["waiting", "starting"].includes(s.phase))
+        return json(
+          { error: "Match has begun. Reconnect to resume or spectate." },
+          409
+        );
+      s.players = s.players.filter((p) => p.session !== session);
+      s.phase = "waiting";
+      s.startToken = undefined;
+      s.deadline = 0;
+      this.save(s);
+      for (const ws of this.ctx.getWebSockets())
+        if (ws.deserializeAttachment()?.session === session)
+          ws.close(1000, "Left lobby");
+      return json({ ok: true });
+    }
     if (url.pathname.endsWith("/socket")) {
       if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket")
         return json({ error: "WebSocket required" }, 426);
-      if (this.ctx.getWebSockets().length >= 6)
+      if (
+        this.ctx
+          .getWebSockets()
+          .filter((ws) => ws.deserializeAttachment()?.session === session)
+          .length >= 3
+      )
         return json({ error: "Too many open tabs for this match." }, 429);
       const pair = new WebSocketPair();
       const [client, server] = Object.values(pair);
+      server.serializeAttachment({ session });
       this.ctx.acceptWebSocket(server);
-      server.send(JSON.stringify({ type: "state", state: publicState(s) }));
+      member.disconnectedAt = undefined;
+      this.save(s);
+      if (s.phase === "waiting") this.ctx.waitUntil(this.startWaiting());
       return new Response(null, { status: 101, webSocket: client });
     }
-    if (request.method === "GET") return json(publicState(s));
+    if (request.method === "GET")
+      return json(publicState(s, Date.now(), session));
     return json({ error: "Not found" }, 404);
   }
   webSocketMessage(ws: WebSocket, raw: string | ArrayBuffer) {
@@ -485,7 +876,11 @@ export class GameRoom extends DurableObject<Env> {
       const action: ClientAction = JSON.parse(raw),
         s = this.read();
       if (!s) return;
-      const self = s.players.find((p) => p.agentId === undefined)!;
+      const self = this.member(
+        s,
+        ws.deserializeAttachment()?.session ?? s.owner
+      );
+      if (!self) throw new Error("No seat");
       let error: string | null;
       if (
         action.type === "message" &&
@@ -513,10 +908,33 @@ export class GameRoom extends DurableObject<Env> {
     }
   }
   webSocketClose(ws: WebSocket, code: number) {
-    ws.close(code === 1006 ? 1000 : code);
+    this.disconnected(ws);
+    ws.close([1005, 1006, 1015].includes(code) ? 1000 : code);
   }
   webSocketError(ws: WebSocket) {
+    this.disconnected(ws);
     ws.close(1011, "Please reconnect");
+  }
+  disconnected(ws: WebSocket) {
+    const s = this.read();
+    if (!s) return;
+    const session = ws.deserializeAttachment()?.session ?? s.owner;
+    if (
+      this.ctx
+        .getWebSockets()
+        .some(
+          (other) =>
+            other !== ws &&
+            other.readyState === 1 &&
+            other.deserializeAttachment()?.session === session
+        )
+    )
+      return;
+    const p = this.member(s, session);
+    if (p) {
+      p.disconnectedAt = Date.now();
+      this.save(s);
+    }
   }
 }
 export default {
@@ -529,16 +947,33 @@ export default {
         const origin = request.headers.get("Origin");
         if (origin && origin !== url.origin)
           return json({ error: "Origin not allowed" }, 403);
-        if (url.pathname.startsWith('/api/admin/')) return adminApi(request, env, request.method === 'POST' ? await body(request) : {});
+        if (url.pathname === "/api/dev/status" && devAllowed(request, env))
+          return json({ fixture: true });
+        if (url.pathname.startsWith("/api/admin/"))
+          return adminApi(
+            request,
+            env,
+            request.method === "POST" ? await body(request) : {}
+          );
         if (url.pathname === "/api/rooms" && request.method === "POST") {
           const input = await body(request),
-            id = crypto.randomUUID(),
             owner = cookie(request) || crypto.randomUUID();
-          await env.ROOMS.getByName(id).init(
-            id,
-            owner,
-            devAllowed(request, env) && input.fast === true
-          );
+          if (
+            input.mode !== undefined &&
+            input.mode !== "BLEND_IN" &&
+            input.mode !== "FIND_THE_AI"
+          )
+            return json({ error: "Unknown mode" }, 400);
+          const fast = devAllowed(request, env) && input.fast === true;
+          const id =
+            input.mode === "FIND_THE_AI"
+              ? await env.MATCHMAKER.getByName("waiting-rooms").join(
+                  owner,
+                  fast
+                )
+              : crypto.randomUUID();
+          if (input.mode !== "FIND_THE_AI")
+            await env.ROOMS.getByName(id).init(id, owner, fast);
           const response = json({ roomId: id }, 201);
           response.headers.set(
             "Set-Cookie",
@@ -547,7 +982,7 @@ export default {
           return response;
         }
         const match = url.pathname.match(
-          /^\/api\/rooms\/([a-f0-9-]{36})(?:\/(socket|dev\/(?:inspect|advance|reset|votes|interrupt|reflect)))?$/
+          /^\/api\/rooms\/([a-f0-9-]{36})(?:\/(socket|leave|dev\/(?:inspect|advance|reset|votes|interrupt|reflect|expire-disconnects)))?$/
         );
         if (match) return env.ROOMS.getByName(match[1]).fetch(request);
         return json({ error: "Not found" }, 404);

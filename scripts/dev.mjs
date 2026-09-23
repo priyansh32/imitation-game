@@ -5,7 +5,8 @@ const child = spawn(
     "node_modules/vite/bin/vite.js",
     "--host",
     "127.0.0.1",
-    "--port", "5180",
+    "--port",
+    "5180",
     ...process.argv.slice(2)
   ],
   { stdio: "inherit", env: { ...process.env, GAME_LOCAL: "1" } }

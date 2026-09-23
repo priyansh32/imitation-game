@@ -1,7 +1,7 @@
 ﻿import { chromium } from "@playwright/test";
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
-const base = process.env.TEST_URL || "http://127.0.0.1:5173";
+const base = process.env.TEST_URL || "http://127.0.0.1:5180";
 const dev = { "X-Dev-Token": "local-inspection-only" };
 await mkdir("artifacts", { recursive: true });
 const browser = await chromium.launch();
@@ -263,7 +263,13 @@ try {
   const shared = nextPrivate.agents.filter((a) =>
     after.agents.some((b) => b.agentId === a.agentId)
   );
-  assert.ok(shared.length >= 2);
+  // Random sampling may produce disjoint groups. Stored identities must persist either way.
+  const retained = await inspect(id);
+  for (const a of retained.agents) {
+    const prior = after.agents.find((p) => p.agentId === a.agentId);
+    assert.equal(a.games, prior.games);
+    assert.deepEqual(a.episodes, prior.episodes);
+  }
   for (const a of shared) {
     assert.equal(
       a.games,

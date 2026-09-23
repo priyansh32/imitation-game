@@ -3,10 +3,12 @@ import assert from "node:assert/strict";
 import {
   addMessage,
   castVote,
+  outcomeFor,
   publicState,
   transition,
   type RoomState
 } from "../src/game";
+import { matchContext, MODES } from "../src/modes";
 function room(): RoomState {
   return {
     roomId: "test",
@@ -44,6 +46,25 @@ function room(): RoomState {
 }
 test("public projection never contains private participant types, ownership, beliefs, scheduling or identity before reveal", () => {
   const s = room();
+  s.players[1].beliefs = {
+    p2: {
+      participantId: "p2",
+      humanProbability: 0.8,
+      confidence: 0.7,
+      reasons: ["timing"],
+      lastUpdatedAt: 1
+    }
+  };
+  s.players[2].beliefs = {
+    p1: {
+      participantId: "p1",
+      humanProbability: 0.1,
+      confidence: 0.8,
+      reasons: ["silence"],
+      lastUpdatedAt: 1
+    }
+  };
+  assert.notDeepEqual(s.players[1].beliefs, s.players[2].beliefs);
   for (const phase of [
     "arrival",
     "discussion",
@@ -63,6 +84,7 @@ test("public projection never contains private participant types, ownership, bel
       "agentId",
       "behavior",
       "suspicion",
+      "beliefs",
       "hypothesis",
       "reflectionBusy",
       "identities",
@@ -80,6 +102,7 @@ test("public projection never contains private participant types, ownership, bel
 test("human and agent messages use identical schema, second precision, limit, rate gate, and idempotency", () => {
   const s = room();
   assert.equal(addMessage(s, "p0", " hello ", "a", 2000), null);
+  assert.equal(s.eventVersion, 1);
   assert.equal(addMessage(s, "p1", "hello", "b", 2345), null);
   assert.deepEqual(Object.keys(s.messages[0]), Object.keys(s.messages[1]));
   assert.equal(s.messages[1].at, 2000);
@@ -145,4 +168,57 @@ test("human elimination ends after the concealed verdict beat; pending responses
   transition(s, 3000);
   assert.equal(s.phase, "reveal");
   assert.equal(publicState(s).outcome, "caught");
+});
+
+test("multiplayer projections are session-specific, including eliminated spectators", () => {
+  const s = room();
+  s.mode = "FIND_THE_AI";
+  s.players.forEach((p, i) => {
+    if (i < 5) {
+      delete p.agentId;
+      p.session = `secret-${i}`;
+    }
+  });
+  s.phase = "waiting";
+  assert.deepEqual(publicState(s, 1, "secret-0").participants, []);
+  s.phase = "voting";
+  s.votes = { p0: "p2", p1: "p3" };
+  for (let i = 0; i < 5; i++) {
+    const view = publicState(s, 1, `secret-${i}`);
+    assert.equal(view.selfId, `p${i}`);
+    assert.equal(view.votedFor, s.votes[`p${i}`] ?? null);
+    assert.ok(!JSON.stringify(view).includes("secret-"));
+    assert.ok(!JSON.stringify(view).includes("agentId"));
+  }
+  s.players[0].eliminated = true;
+  assert.ok(castVote(s, "p0", "p1", 1, 2));
+  assert.equal(publicState(s, 1, "secret-0").selfId, "p0");
+  assert.equal(publicState(s, 1, "secret-0").identities, undefined);
+  assert.equal(outcomeFor(s), undefined);
+  s.players[5].eliminated = true;
+  assert.equal(outcomeFor(s), "caught");
+  s.outcome = "caught";
+  s.phase = "reveal";
+  assert.equal(publicState(s, 1, "secret-0").humanWon, true);
+  assert.equal(
+    publicState(s).identities?.filter((p) => p.kind === "ai").length,
+    1
+  );
+});
+
+test("roles and objectives change with mode, while no separate population is configured", () => {
+  assert.equal(matchContext("a", "BLEND_IN").role, "HUNTER");
+  assert.equal(matchContext("b", "FIND_THE_AI").role, "INFILTRATOR");
+  assert.equal(MODES.BLEND_IN.agents, 5);
+  assert.equal(MODES.FIND_THE_AI.agents, 1);
+  const s = room();
+  s.mode = "FIND_THE_AI";
+  s.players.forEach((p, i) => {
+    if (i < 5) delete p.agentId;
+    p.eliminated = i < 4;
+  });
+  assert.equal(outcomeFor(s), "blended");
+  s.phase = "reveal";
+  s.outcome = outcomeFor(s);
+  assert.equal(publicState(s).humanWon, false);
 });

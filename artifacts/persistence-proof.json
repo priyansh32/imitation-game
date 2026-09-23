@@ -1,14 +1,355 @@
 {
-  "roomId": "9229876f-7af5-4f3b-bb5b-ce99036a7110",
+  "roomId": "4af64255-1615-4f09-8fb4-8e3e198c839b",
   "agents": [
     {
-      "agentId": 26,
-      "games": 3,
+      "agentId": 88,
+      "games": 10,
       "strategy": {
-        "earlyAccusation": 0.43999999999999995,
+        "earlyAccusation": 0.2999999999999998,
         "silence": 0.5,
         "humor": 0.5,
         "directQuestions": 0.5,
+        "followUpQuestions": 0.5,
+        "personalStories": 0.55
+      },
+      "episodes": [
+        {
+          "room": "bbe9ca49-423a-4bfd-9e23-410a6607f7e6",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790045757171
+        },
+        {
+          "room": "bd70876d-025a-4511-ad2e-22c8e2e3d5fe",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790045761034
+        },
+        {
+          "room": "cd62d0f7-f267-42fa-b1d0-071884bfbf57",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790045815338
+        },
+        {
+          "room": "9229876f-7af5-4f3b-bb5b-ce99036a7110",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790046401727
+        },
+        {
+          "room": "0b93eea9-dafc-43ed-abb8-04bd3980a728",
+          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790046405499
+        },
+        {
+          "room": "b5c58e43-4e99-48c0-8538-d35bcd746e28",
+          "lesson": "Development fixture for Agent #88: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103311717,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "personalStories": 0.01
+          },
+          "source": "fixture"
+        },
+        {
+          "room": "433513ea-11eb-49b2-877e-6e16d64be627",
+          "lesson": "Development fixture for Agent #88: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103363504,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "personalStories": 0.01
+          },
+          "source": "fixture"
+        },
+        {
+          "room": "81de028d-72fd-4bf4-88ea-79d9368811f9",
+          "lesson": "Development fixture for Agent #88: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103639498,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "personalStories": 0.01
+          },
+          "source": "fixture"
+        },
+        {
+          "room": "4af64255-1615-4f09-8fb4-8e3e198c839b",
+          "mode": "BLEND_IN",
+          "role": "HUNTER",
+          "lesson": "Development fixture for Agent #88: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790114312102,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "personalStories": 0.01
+          },
+          "source": "fixture"
+        },
+        {
+          "room": "c9a55533-97d2-4619-b6e8-38a889f21f5e",
+          "mode": "BLEND_IN",
+          "role": "HUNTER",
+          "lesson": "Development fixture for Agent #88: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790114316774,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "personalStories": 0.01
+          },
+          "source": "fixture"
+        }
+      ]
+    },
+    {
+      "agentId": 185,
+      "games": 7,
+      "strategy": {
+        "earlyAccusation": 0.42999999999999994,
+        "silence": 0.5,
+        "humor": 0.5,
+        "directQuestions": 0.5,
+        "followUpQuestions": 0.5,
+        "personalStories": 0.5
+      },
+      "episodes": [
+        {
+          "room": "acc904b3-f0ba-4baa-b3fa-72c287a1acb6",
+          "lesson": "Development fixture for Agent #185: a fast accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103408750,
+          "adjustments": {
+            "earlyAccusation": -0.01
+          },
+          "source": "fixture"
+        },
+        {
+          "room": "de33465c-17a3-4258-9b60-9549c8d51a9b",
+          "lesson": "Development fixture for Agent #185: a fast accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103522785,
+          "adjustments": {
+            "earlyAccusation": -0.01
+          },
+          "source": "fixture"
+        },
+        {
+          "room": "1c9ce1e1-c98c-424a-969e-968042d3126b",
+          "lesson": "Development fixture for Agent #185: a fast accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103554931,
+          "adjustments": {
+            "earlyAccusation": -0.01
+          },
+          "source": "fixture"
+        },
+        {
+          "room": "80bfe11c-cb5d-49ed-b668-ff19591ec2e3",
+          "lesson": "Development fixture for Agent #185: a fast accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103865581,
+          "adjustments": {
+            "earlyAccusation": -0.01
+          },
+          "source": "fixture"
+        },
+        {
+          "room": "5f6561a9-da4d-4cc5-bb06-e44edb74cad3",
+          "mode": "BLEND_IN",
+          "role": "HUNTER",
+          "lesson": "Development fixture for Agent #185: a fast accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790114267389,
+          "adjustments": {
+            "earlyAccusation": -0.01
+          },
+          "source": "fixture"
+        },
+        {
+          "room": "4af64255-1615-4f09-8fb4-8e3e198c839b",
+          "mode": "BLEND_IN",
+          "role": "HUNTER",
+          "lesson": "Development fixture for Agent #185: a fast accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790114312103,
+          "adjustments": {
+            "earlyAccusation": -0.01
+          },
+          "source": "fixture"
+        },
+        {
+          "room": "c9a55533-97d2-4619-b6e8-38a889f21f5e",
+          "mode": "BLEND_IN",
+          "role": "HUNTER",
+          "lesson": "Development fixture for Agent #185: a fast accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790114316774,
+          "adjustments": {
+            "earlyAccusation": -0.01
+          },
+          "source": "fixture"
+        }
+      ]
+    },
+    {
+      "agentId": 117,
+      "games": 8,
+      "strategy": {
+        "earlyAccusation": 0.33999999999999986,
+        "silence": 0.5,
+        "humor": 0.5,
+        "directQuestions": 0.5,
+        "followUpQuestions": 0.41999999999999993,
+        "personalStories": 0.5
+      },
+      "episodes": [
+        {
+          "room": "e5ec9991-94c5-4736-8697-ef447f3f8059",
+          "lesson": "Development fixture for Agent #117: a fast accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790102466801,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "followUpQuestions": -0.01
+          },
+          "source": "fixture"
+        },
+        {
+          "room": "b5c58e43-4e99-48c0-8538-d35bcd746e28",
+          "lesson": "Development fixture for Agent #117: a fast accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103311717,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "followUpQuestions": -0.01
+          },
+          "source": "fixture"
+        },
+        {
+          "room": "433513ea-11eb-49b2-877e-6e16d64be627",
+          "lesson": "Development fixture for Agent #117: a fast accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103363503,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "followUpQuestions": -0.01
+          },
+          "source": "fixture"
+        },
+        {
+          "room": "de96355e-aa1f-48d6-8cb9-d7b96bfbdac2",
+          "lesson": "Development fixture for Agent #117: a fast accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103502700,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "followUpQuestions": -0.01
+          },
+          "source": "fixture"
+        },
+        {
+          "room": "81de028d-72fd-4bf4-88ea-79d9368811f9",
+          "lesson": "Development fixture for Agent #117: a fast accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103639498,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "followUpQuestions": -0.01
+          },
+          "source": "fixture"
+        },
+        {
+          "room": "0f67eee3-42b7-40a0-98c6-dfa23b6e401e",
+          "mode": "FIND_THE_AI",
+          "role": "INFILTRATOR",
+          "lesson": "Development fixture for Agent #117: a fast accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790113887532,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "followUpQuestions": -0.01
+          },
+          "source": "fixture"
+        },
+        {
+          "room": "5ccc5928-e57b-46ce-b523-a9e00892e971",
+          "mode": "FIND_THE_AI",
+          "role": "INFILTRATOR",
+          "lesson": "Development fixture for Agent #117: a fast accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790114281524,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "followUpQuestions": -0.01
+          },
+          "source": "fixture"
+        },
+        {
+          "room": "4af64255-1615-4f09-8fb4-8e3e198c839b",
+          "mode": "BLEND_IN",
+          "role": "HUNTER",
+          "lesson": "Development fixture for Agent #117: a fast accusation was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790114312103,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "followUpQuestions": -0.01
+          },
+          "source": "fixture"
+        }
+      ]
+    },
+    {
+      "agentId": 138,
+      "games": 5,
+      "strategy": {
+        "earlyAccusation": 0.43999999999999995,
+        "silence": 0.54,
+        "humor": 0.5,
+        "directQuestions": 0.5,
+        "followUpQuestions": 0.5,
+        "personalStories": 0.5
+      },
+      "episodes": [
+        {
+          "room": "d2f3868c-af29-45d7-af2f-370276b8e13c",
+          "lesson": "Development fixture for Agent #138: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790102431501,
+          "adjustments": {
+            "earlyAccusation": 0.02
+          },
+          "source": "fixture"
+        },
+        {
+          "room": "b5c58e43-4e99-48c0-8538-d35bcd746e28",
+          "lesson": "Development fixture for Agent #138: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103311717,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "silence": 0.01
+          },
+          "source": "fixture"
+        },
+        {
+          "room": "2009f96a-fff2-4948-8d49-fa36ccaf6bfb",
+          "lesson": "Development fixture for Agent #138: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103412488,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "silence": 0.01
+          },
+          "source": "fixture"
+        },
+        {
+          "room": "1c9ce1e1-c98c-424a-969e-968042d3126b",
+          "lesson": "Development fixture for Agent #138: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103554929,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "silence": 0.01
+          },
+          "source": "fixture"
+        },
+        {
+          "room": "4af64255-1615-4f09-8fb4-8e3e198c839b",
+          "mode": "BLEND_IN",
+          "role": "HUNTER",
+          "lesson": "Development fixture for Agent #138: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790114312103,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "silence": 0.01
+          },
+          "source": "fixture"
+        }
+      ]
+    },
+    {
+      "agentId": 26,
+      "games": 11,
+      "strategy": {
+        "earlyAccusation": 0.2999999999999998,
+        "silence": 0.5,
+        "humor": 0.52,
+        "directQuestions": 0.5700000000000001,
         "followUpQuestions": 0.5,
         "personalStories": 0.5
       },
@@ -27,142 +368,91 @@
           "room": "9229876f-7af5-4f3b-bb5b-ce99036a7110",
           "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
           "at": 1790046401726
-        }
-      ]
-    },
-    {
-      "agentId": 63,
-      "games": 3,
-      "strategy": {
-        "earlyAccusation": 0.43999999999999995,
-        "silence": 0.5,
-        "humor": 0.5,
-        "directQuestions": 0.5,
-        "followUpQuestions": 0.5,
-        "personalStories": 0.5
-      },
-      "episodes": [
-        {
-          "room": "bbe9ca49-423a-4bfd-9e23-410a6607f7e6",
-          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
-          "at": 1790045757171
         },
         {
-          "room": "cd62d0f7-f267-42fa-b1d0-071884bfbf57",
+          "room": "e1b02432-aeda-431d-b82c-0c6af3021d04",
           "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
-          "at": 1790045815338
+          "at": 1790046642867,
+          "adjustments": {
+            "humor": 0.02
+          },
+          "source": "fixture"
         },
         {
-          "room": "9229876f-7af5-4f3b-bb5b-ce99036a7110",
-          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
-          "at": 1790046401727
-        }
-      ]
-    },
-    {
-      "agentId": 9,
-      "games": 3,
-      "strategy": {
-        "earlyAccusation": 0.43999999999999995,
-        "silence": 0.5,
-        "humor": 0.5,
-        "directQuestions": 0.5,
-        "followUpQuestions": 0.5,
-        "personalStories": 0.5
-      },
-      "episodes": [
-        {
-          "room": "bbe9ca49-423a-4bfd-9e23-410a6607f7e6",
-          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
-          "at": 1790045757170
+          "room": "ddf739f7-970b-48cc-8127-a455c1eeadde",
+          "lesson": "Development fixture for Agent #26: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790102462537,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "directQuestions": 0.01
+          },
+          "source": "fixture"
         },
         {
-          "room": "9229876f-7af5-4f3b-bb5b-ce99036a7110",
-          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
-          "at": 1790046401727
+          "room": "e5ec9991-94c5-4736-8697-ef447f3f8059",
+          "lesson": "Development fixture for Agent #26: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790102466802,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "directQuestions": 0.01
+          },
+          "source": "fixture"
         },
         {
-          "room": "0b93eea9-dafc-43ed-abb8-04bd3980a728",
-          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
-          "at": 1790046405499
-        }
-      ]
-    },
-    {
-      "agentId": 88,
-      "games": 5,
-      "strategy": {
-        "earlyAccusation": 0.3999999999999999,
-        "silence": 0.5,
-        "humor": 0.5,
-        "directQuestions": 0.5,
-        "followUpQuestions": 0.5,
-        "personalStories": 0.5
-      },
-      "episodes": [
-        {
-          "room": "bbe9ca49-423a-4bfd-9e23-410a6607f7e6",
-          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
-          "at": 1790045757171
+          "room": "de33465c-17a3-4258-9b60-9549c8d51a9b",
+          "lesson": "Development fixture for Agent #26: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103522785,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "directQuestions": 0.01
+          },
+          "source": "fixture"
         },
         {
-          "room": "bd70876d-025a-4511-ad2e-22c8e2e3d5fe",
-          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
-          "at": 1790045761034
+          "room": "efb78fb0-d019-45a6-b705-91de9682cfe3",
+          "lesson": "Development fixture for Agent #26: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790103589004,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "directQuestions": 0.01
+          },
+          "source": "fixture"
         },
         {
-          "room": "cd62d0f7-f267-42fa-b1d0-071884bfbf57",
-          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
-          "at": 1790045815338
+          "room": "5f6561a9-da4d-4cc5-bb06-e44edb74cad3",
+          "mode": "BLEND_IN",
+          "role": "HUNTER",
+          "lesson": "Development fixture for Agent #26: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790114267390,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "directQuestions": 0.01
+          },
+          "source": "fixture"
         },
         {
-          "room": "9229876f-7af5-4f3b-bb5b-ce99036a7110",
-          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
-          "at": 1790046401727
+          "room": "4af64255-1615-4f09-8fb4-8e3e198c839b",
+          "mode": "BLEND_IN",
+          "role": "HUNTER",
+          "lesson": "Development fixture for Agent #26: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790114312103,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "directQuestions": 0.01
+          },
+          "source": "fixture"
         },
         {
-          "room": "0b93eea9-dafc-43ed-abb8-04bd3980a728",
-          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
-          "at": 1790046405499
-        }
-      ]
-    },
-    {
-      "agentId": 17,
-      "games": 5,
-      "strategy": {
-        "earlyAccusation": 0.3999999999999999,
-        "silence": 0.5,
-        "humor": 0.5,
-        "directQuestions": 0.5,
-        "followUpQuestions": 0.5,
-        "personalStories": 0.5
-      },
-      "episodes": [
-        {
-          "room": "bbe9ca49-423a-4bfd-9e23-410a6607f7e6",
-          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
-          "at": 1790045757171
-        },
-        {
-          "room": "bd70876d-025a-4511-ad2e-22c8e2e3d5fe",
-          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
-          "at": 1790045761034
-        },
-        {
-          "room": "a3e4882f-926c-4e48-aa2a-2d1ae195d157",
-          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
-          "at": 1790046386818
-        },
-        {
-          "room": "9229876f-7af5-4f3b-bb5b-ce99036a7110",
-          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
-          "at": 1790046401727
-        },
-        {
-          "room": "0b93eea9-dafc-43ed-abb8-04bd3980a728",
-          "lesson": "Development fixture: a confident accusation was not reliable evidence. Keep uncertainty in the next match.",
-          "at": 1790046405499
+          "room": "c9a55533-97d2-4619-b6e8-38a889f21f5e",
+          "mode": "BLEND_IN",
+          "role": "HUNTER",
+          "lesson": "Development fixture for Agent #26: a quiet read was not reliable evidence. Keep uncertainty in the next match.",
+          "at": 1790114316774,
+          "adjustments": {
+            "earlyAccusation": -0.02,
+            "directQuestions": 0.01
+          },
+          "source": "fixture"
         }
       ]
     }

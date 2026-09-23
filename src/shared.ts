@@ -1,4 +1,6 @@
 ﻿export type Phase =
+  | "waiting"
+  | "starting"
   | "arrival"
   | "discussion"
   | "voting"
@@ -11,6 +13,7 @@ export interface Participant {
   symbol: string;
   eliminated: boolean;
 }
+export type GameMode = "BLEND_IN" | "FIND_THE_AI";
 export interface Message {
   id: string;
   sender: string;
@@ -34,6 +37,9 @@ export interface Identity {
   reflection?: "pending" | "complete" | "unavailable";
 }
 export interface Snapshot {
+  mode?: GameMode;
+  lobby?: { joined: number; required: number };
+  humanWon?: boolean;
   roomId: string;
   revision: number;
   phase: Phase;

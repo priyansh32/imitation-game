@@ -1,0 +1,210 @@
+{
+  "simulation": "five scripted human clients; actual Workers AI",
+  "room": "c4f8383b-a4cc-4759-bd44-2da389a85e7e",
+  "aiId": "8603bb4c-b5af-47e6-bf94-78ca663db59b",
+  "messages": [
+    {
+      "id": "fd507b4d-fb5f-458d-9caa-3ce8ee93818d",
+      "sender": "499ec8ed-38cb-4358-9f88-d16489dc56ff",
+      "text": "what is one small thing that annoyed you today",
+      "at": 1790114467000,
+      "round": 1
+    },
+    {
+      "id": "23839de9-db0c-4ee1-a30c-3094380338b5",
+      "sender": "335db93f-ebcd-4cf8-8301-288f9a56de4d",
+      "text": "someone left one teaspoon of milk in the carton again",
+      "at": 1790114474000,
+      "round": 1
+    },
+    {
+      "id": "6c343281-e0a3-4677-8bc9-ce84abc40c9a",
+      "sender": "88f552aa-3266-4d54-bdd3-8f8fabfcf18a",
+      "text": "i missed the bus because i was watching the wrong stop",
+      "at": 1790114482000,
+      "round": 1
+    },
+    {
+      "id": "91e44318-9ece-4091-b93b-5462237744cc",
+      "sender": "8603bb4c-b5af-47e6-bf94-78ca663db59b",
+      "text": "puddle's question is a good reminder to check in. let's keep it real and share something simple – maybe a tiny irritation that stuck with us. it's a way to connect without diving deep.",
+      "at": 1790114485000,
+      "round": 1
+    },
+    {
+      "id": "69745212-a2b8-4786-b798-b3a6c4789785",
+      "sender": "6f8f65fb-5a30-406d-8b88-6dfc947d74c7",
+      "text": "those are very safe answers. anyone got a bad opinion",
+      "at": 1790114490000,
+      "round": 1
+    },
+    {
+      "id": "297182bd-9dff-40ff-8904-f326a5f9b45a",
+      "sender": "5e598a41-411d-4a8c-935b-c619d1461e2e",
+      "text": "i think being too polished is a worse sign than a typo",
+      "at": 1790114497000,
+      "round": 1
+    },
+    {
+      "id": "5bd95b79-5063-4c12-b67c-b46535a9f51a",
+      "sender": "499ec8ed-38cb-4358-9f88-d16489dc56ff",
+      "text": "i disagree. being awkward could be deliberate too",
+      "at": 1790114505000,
+      "round": 1
+    },
+    {
+      "id": "cdc87ca5-878a-4e78-9fac-c7023d44a9b9",
+      "sender": "335db93f-ebcd-4cf8-8301-288f9a56de4d",
+      "text": "okay who changed their mind since the last vote",
+      "at": 1790114513000,
+      "round": 1
+    },
+    {
+      "id": "8de174cc-100d-481d-8085-b0dd849a5ffd",
+      "sender": "88f552aa-3266-4d54-bdd3-8f8fabfcf18a",
+      "text": "i voted on a vibe and that is embarrassing in hindsight",
+      "at": 1790114520000,
+      "round": 1
+    },
+    {
+      "id": "0b790367-b6b3-4a6a-aacf-cd2a73c8fb50",
+      "sender": "6f8f65fb-5a30-406d-8b88-6dfc947d74c7",
+      "text": "we should ask something that needs a follow up",
+      "at": 1790114528000,
+      "round": 1
+    },
+    {
+      "id": "3315e1b9-bd23-4c7f-ba38-a237990ebcc0",
+      "sender": "88f552aa-3266-4d54-bdd3-8f8fabfcf18a",
+      "text": "i am mostly watching who actually answers questions",
+      "at": 1790114556000,
+      "round": 2
+    },
+    {
+      "id": "c869fd61-d428-49df-b287-1b574bbce807",
+      "sender": "6f8f65fb-5a30-406d-8b88-6dfc947d74c7",
+      "text": "what is one small thing that annoyed you today",
+      "at": 1790114563000,
+      "round": 2
+    },
+    {
+      "id": "418ecb40-37cc-44b7-a382-205309727784",
+      "sender": "5e598a41-411d-4a8c-935b-c619d1461e2e",
+      "text": "someone left one teaspoon of milk in the carton again",
+      "at": 1790114571000,
+      "round": 2
+    },
+    {
+      "id": "74908990-491b-484b-b41b-76a597291798",
+      "sender": "335db93f-ebcd-4cf8-8301-288f9a56de4d",
+      "text": "i missed the bus because i was watching the wrong stop",
+      "at": 1790114579000,
+      "round": 2
+    },
+    {
+      "id": "e6f0c6f1-5e30-4e90-9c3d-f0bb7bb47506",
+      "sender": "88f552aa-3266-4d54-bdd3-8f8fabfcf18a",
+      "text": "those are very safe answers. anyone got a bad opinion",
+      "at": 1790114586000,
+      "round": 2
+    },
+    {
+      "id": "aae2f729-da07-4fcd-81f7-9113e8556dea",
+      "sender": "6f8f65fb-5a30-406d-8b88-6dfc947d74c7",
+      "text": "i think being too polished is a worse sign than a typo",
+      "at": 1790114594000,
+      "round": 2
+    },
+    {
+      "id": "dcf5c314-dc2d-4916-8846-c829b5b105ed",
+      "sender": "5e598a41-411d-4a8c-935b-c619d1461e2e",
+      "text": "i disagree. being awkward could be deliberate too",
+      "at": 1790114602000,
+      "round": 2
+    },
+    {
+      "id": "935ee535-8972-48be-830b-b191a815fa96",
+      "sender": "335db93f-ebcd-4cf8-8301-288f9a56de4d",
+      "text": "okay who changed their mind since the last vote",
+      "at": 1790114609000,
+      "round": 2
+    },
+    {
+      "id": "402f4d5b-4f7b-410a-840b-4466f096e20c",
+      "sender": "88f552aa-3266-4d54-bdd3-8f8fabfcf18a",
+      "text": "i voted on a vibe and that is embarrassing in hindsight",
+      "at": 1790114617000,
+      "round": 2
+    }
+  ],
+  "results": [
+    {
+      "round": 1,
+      "counts": {
+        "6f8f65fb-5a30-406d-8b88-6dfc947d74c7": 0,
+        "335db93f-ebcd-4cf8-8301-288f9a56de4d": 1,
+        "8603bb4c-b5af-47e6-bf94-78ca663db59b": 0,
+        "499ec8ed-38cb-4358-9f88-d16489dc56ff": 4,
+        "5e598a41-411d-4a8c-935b-c619d1461e2e": 0,
+        "88f552aa-3266-4d54-bdd3-8f8fabfcf18a": 0
+      },
+      "eliminated": "499ec8ed-38cb-4358-9f88-d16489dc56ff",
+      "tied": false,
+      "abstentions": 1
+    },
+    {
+      "round": 2,
+      "counts": {
+        "6f8f65fb-5a30-406d-8b88-6dfc947d74c7": 0,
+        "335db93f-ebcd-4cf8-8301-288f9a56de4d": 0,
+        "8603bb4c-b5af-47e6-bf94-78ca663db59b": 4,
+        "5e598a41-411d-4a8c-935b-c619d1461e2e": 0,
+        "88f552aa-3266-4d54-bdd3-8f8fabfcf18a": 0
+      },
+      "eliminated": "8603bb4c-b5af-47e6-bf94-78ca663db59b",
+      "tied": false,
+      "abstentions": 1
+    }
+  ],
+  "identities": [
+    {
+      "id": "6f8f65fb-5a30-406d-8b88-6dfc947d74c7",
+      "kind": "human"
+    },
+    {
+      "id": "335db93f-ebcd-4cf8-8301-288f9a56de4d",
+      "kind": "human"
+    },
+    {
+      "id": "8603bb4c-b5af-47e6-bf94-78ca663db59b",
+      "kind": "ai",
+      "agentId": 26,
+      "games": 1,
+      "learned": false,
+      "reflection": "pending"
+    },
+    {
+      "id": "499ec8ed-38cb-4358-9f88-d16489dc56ff",
+      "kind": "human"
+    },
+    {
+      "id": "5e598a41-411d-4a8c-935b-c619d1461e2e",
+      "kind": "human"
+    },
+    {
+      "id": "88f552aa-3266-4d54-bdd3-8f8fabfcf18a",
+      "kind": "human"
+    }
+  ],
+  "humanWon": true,
+  "persistentHistory": {
+    "room": "c4f8383b-a4cc-4759-bd44-2da389a85e7e",
+    "won": false,
+    "at": 1790114644964,
+    "mode": "FIND_THE_AI",
+    "role": "INFILTRATOR"
+  },
+  "agentId": 26,
+  "games": 2,
+  "reflectionRecorded": false
+}

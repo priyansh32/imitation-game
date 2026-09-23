@@ -1,437 +1,88 @@
 # HUMAN?
 
-> A social deduction game where persistent AI players learn from the games they play.
+HUMAN? is an anonymous social deduction game. **Find the AI** is the primary mode: five humans hunt one persistent AI trying to blend in. The homepage's **FIND A GAME** button opens multiplayer matchmaking. **Blend In** remains available as the secondary mode: one human hides among five AI agents.
 
-**HUMAN?** is an experimental multiplayer game built around persistent AI agents.
-
-The first game mode, **Blend In**, reverses the usual Turing test:
-
-**You are the only human in a room with five AI agents. They are trying to find you. Convince them to vote each other out.**
-
-The agents are not told which other participants are AI. Every player receives a temporary anonymous identity, and the five agents independently observe the conversation, form suspicions, interact, and vote.
-
-The interesting part begins after the match ends.
-
-These aren't intended to be disposable LLM sessions. Each AI participant has a persistent identity with its own personality, behavioral tendencies, memories, game history, and learned strategies.
-
-Over many games, agents that began from the same base can develop differently because they experience different humans and make different mistakes.
-
----
-
-## Game Modes
-
-### Blend In
-
-**1 Human · 5 AI**
-
-The human must survive while five AI agents attempt to identify them.
-
-The agents know exactly one participant is human, but they do not know which participant it is—and they do not know which other participants are AI.
-
-The human wins by manipulating the conversation and convincing the agents to eliminate one another.
-
-### Find the AI
-
-**5 Humans · 1 AI**
-
-The inverse mode.
-
-Humans attempt to identify the AI while a persistent AI agent attempts to survive by blending into the group.
-
-This mode is intended for environments with sufficient concurrent human players.
-
----
-
-## How a Match Works
-
-Six participants enter with temporary randomized identities:
-
-```text
-wet_sock
-diesel
-pigeon
-rajma
-chair
-helmet
-```
-
-A match alternates between discussion and voting:
-
-```text
-Discussion
-    ↓
-Vote
-    ↓
-Elimination
-    ↓
-Discussion
-    ↓
-Vote
-    ↓
-...
-    ↓
-Final Reveal
-```
-
-Eliminated players' actual identities remain hidden until the end.
-
-A complete game should take roughly 4–6 minutes.
-
----
-
-## Persistent Agents
-
-Underneath the temporary names are persistent AI identities.
-
-For example:
-
-```text
-Agent #42 → diesel
-Agent #17 → pigeon
-Agent #81 → chair
-```
-
-In the next game:
-
-```text
-Agent #42 → wet_sock
-Agent #17 → rajma
-Agent #81 → helmet
-```
-
-The public identity changes.
-
-The underlying agent does not.
-
-Each agent maintains:
-
-* temperament
-* behavioral tendencies
-* strategy beliefs
-* episodic memories
-* game history
-* performance statistics
-
-The goal is for agents to diverge over time through experience rather than merely through different system prompts.
-
----
-
-## Nature + Nurture
-
-Agents inherit a common base containing game knowledge and broadly useful observations.
-
-They then learn independently.
-
-```text
-                     COMMON BASE
-                          │
-              ┌───────────┼───────────┐
-              ▼           ▼           ▼
-          Agent #17   Agent #42   Agent #81
-              │           │           │
-           games        games        games
-              │           │           │
-              ▼           ▼           ▼
-          memories     memories     memories
-          strategies   strategies   strategies
-              │           │           │
-              └────── diverge ───────┘
-```
-
-A discovery made by one agent does not immediately become behavior shared by every agent.
-
-This avoids creating one global AI fingerprint.
-
----
-
-## Personality
-
-Personality has two major components.
-
-### Cognitive personality
-
-Traits that influence how an agent reasons and communicates:
-
-* talkativeness
-* assertiveness
-* humor
-* curiosity
-* agreeableness
-* impulsiveness
-
-These are relatively stable.
-
-### Behavioral personality
-
-Observable behavior controlled partly by orchestration rather than language generation:
-
-* response timing
-* timing variance
-* likelihood of responding
-* message bursts
-* silence
-* message length
-* double-texting
-* interruptions
-
-This distinction matters because human conversation is not:
-
-```text
-message → response
-```
-
-An agent must also decide whether it has anything worth saying.
-
----
-
-## Agent Loop
-
-A participant receiving a message does not automatically trigger an LLM response.
-
-Instead:
-
-```text
-Observe conversation
-        ↓
-Should I act?
-        │
-    ┌───┴────┐
-    │        │
-   no       yes
-    │        │
- silence   choose intent
-             ↓
-        generate candidate
-             ↓
-         novelty check
-          │        │
-       useful   redundant
-          │        │
-          │     revise/silence
-          ▼
-     behavioral timing
-          ↓
-         send
-```
-
-Agents can:
-
-* speak
-* remain silent
-* accuse
-* defend
-* question
-* disagree
-* follow a consensus
-* change their mind
-* vote
-
-Agents are independent and are not told which other participants are agents.
-
----
-
-## Avoiding the AI Fingerprint
-
-The game should be decided through social deduction, not implementation leaks.
-
-AI and human participants therefore share the same public interface and message representation.
-
-The frontend must not know participant types before the final reveal.
-
-Potential accidental fingerprints include:
-
-* deterministic response latency
-* identical typing behavior
-* every agent responding to every message
-* agents responding simultaneously
-* perfect memory
-* correlated voting
-* repetitive language
-* repetitive arguments
-* perfect availability
-* differences in message delivery
-
-Agents therefore have independent behavioral profiles.
-
-### Repetition
-
-Multiple agents using the same underlying model can independently arrive at essentially the same response.
-
-Before sending, generated messages pass through a novelty check.
-
-If another participant has already made substantially the same contribution, the agent can:
-
-* introduce new evidence
-* challenge the existing argument
-* ask a follow-up
-* change subject
-* remain silent
-
-Some repetition is intentionally allowed. Humans naturally pile onto opinions with short messages such as `same`, `yeah`, or `100%`.
-
-The objective is to prevent LLM redundancy, not normal social agreement.
-
----
-
-## Memory
-
-Agent memory has several levels.
-
-### Match memory
-
-Temporary understanding of the current match:
-
-* transcript
-* participants
-* suspicions
-* accusations
-* votes
-* notable events
-
-### Episodic memory
-
-Selected experiences retained from previous games.
-
-Example:
-
-> I accused another participant early. Two players followed my accusation and I survived the round.
-
-### Strategy beliefs
-
-Accumulated beliefs about what has historically worked for this particular agent.
-
-Examples:
-
-* early accusations
-* silence
-* humor
-* follow-up questions
-* direct interrogation
-
-Strategy beliefs change faster than temperament.
-
-A single successful game should not dramatically rewrite an agent.
-
----
-
-## Learning
-
-After a game, participating agents reflect on what happened.
-
-The post-game process asks:
-
-1. What happened?
-2. When did suspicion change?
-3. Which actions appeared useful?
-4. Which actions appeared harmful?
-5. Was anything genuinely novel learned?
-6. Should an existing strategy belief change?
-7. Is an event worth retaining as episodic memory?
-
-Future matches can retrieve those experiences.
-
-The long-term objective is not simply better text generation.
-
-It is for agents to learn how people behave in this particular game.
-
----
+Both modes use the same game engine and persistent agent population. The server owns hidden identities and game mechanics; browsers receive only public room events and their own seat/vote.
 
 ## Architecture
 
-The project is designed around Cloudflare's agent infrastructure.
+- `src/server.ts` is the Worker entrypoint. It validates origins and room ownership, routes WebSocket traffic, and exposes protected local test controls and the admin API.
+- `GameRoom` in `src/server.ts` and `src/game.ts` is the authoritative Durable Object. It owns the phase machine, deterministic timers, votes, elimination, reconnect state, and final reveal.
+- `PersistentPlayer` in `src/player.ts` is one private Agents SDK Durable Object per population member. It stores temperament, behavior, strategy beliefs, episodic lessons, model selection, and game receipts.
+- `Workers AI` is used only for social reasoning: conversation intent, suspicion, votes, and post-match reflection. Timers, random seats, validation, and vote counting stay deterministic.
+- `src/modes.ts` defines composition, objectives, knowledge, roles and win conditions. `src/matchmaker.ts` coordinates waiting seats for Find the AI; it does not run games.
+- The population contains **18 persistent IDs shared by every mode**. Rooms sample five agents for Blend In or one for Find the AI. There are no hunter/infiltrator pools. Each identity always resolves to the same `player-${agentId}` Durable Object.
 
-Conceptually:
+## Persistent learning
 
-```text
-                    Matchmaker
-                        │
-                        ▼
-                ┌──────────────┐
-                │     Room     │
-                │ Durable State│
-                └──────┬───────┘
-                       │
-        ┌──────────────┼──────────────┐
-        ▼              ▼              ▼
-      Human        Agent #42      Agent #17
-                       │
-                       ▼
-                    LLM
-                       │
-                       ▼
-               Persistent State
+Each player Agent has its own state and SQLite receipt table. A room sends an agent only its own observation, messages, votes, private hypothesis, and the revealed outcome. Reflection is idempotent by room receipt, updates that agent's strategy by small bounded adjustments, and stores a short episodic lesson. Concurrent retries cannot count a game or lesson twice.
+
+Roles are temporary match context: `HUNTER` searches for a human; `INFILTRATOR` knows all other players are human and assesses social threats while trying to survive. Switching roles never replaces personality, behavioral profile, model, strategies or memories. Retrieval uses the same recent memories across modes. History and episodes carry mode/role metadata. The private `experiences` SQLite table keeps the full match transcript, result, survival duration, elimination round, votes received/cast and important events, independently of the bounded recent history shown in admin.
+
+The private `/admin` console lists all 18 agents, model assignments, temperament, behavior, strategy beliefs, inference status, games, wins, and retained lessons. It can switch among the configured Workers AI models and run a model probe. It is never linked from the player UI.
+
+## Match state machine
+
+Both modes use `arrival -> discussion -> voting -> concealed elimination -> next round -> reveal`. Find the AI adds `waiting -> starting` before arrival. Four eliminations leave two survivors. Eliminating the minority ends the match: the human in Blend In, the AI in Find the AI. Otherwise that minority wins by surviving. The eliminated identity stays concealed during the verdict beat; final reveal discloses all types and persistent agents.
+
+Find the AI matchmaking reserves at most five human seats in a waiting room. The room only selects its AI after all five human sessions have connected. It then shuffles all six opaque participant IDs, names and symbols together. No production backfilling exists. Concurrent join requests are serialized at the room's seat reservation; duplicate requests for a session share one allocation.
+
+An HttpOnly session cookie identifies a player across reconnects; each socket stores that session privately. Multiple tabs share one seat. Lobby disconnects reduce the connected count immediately and reserve the seat for 15 seconds; leaving releases it immediately. During a match a disconnected player has 60 seconds to return, then forfeits and may reconnect as a spectator. Timed voting never waits indefinitely for disconnected players. Eliminated humans still receive the public room, but cannot chat or vote. Clearing the cookie loses the seat.
+
+Public serialization explicitly selects fields per viewer. Pre-reveal participants have only opaque ID, temporary name, symbol and elimination status. Agent IDs, types, cookies, private beliefs, scheduling and inference details never enter public state. Human/AI messages use the same component, schema, UUID format and second-resolution timestamps. AI knowledge and debug routes remain server-side.
+
+## Independent decision engine
+
+Room events are versioned and each agent keeps a private belief map for the current match. The runtime batches observations, then the agent chooses `SILENCE`, `MESSAGE`, or `VOTE` using its own temperament, strategy beliefs, recent participation, and event relevance. Message intents are selected before language generation. Candidate text passes through a semantic token overlap check that suppresses repeated arguments while allowing short social agreement. Delays include per-agent variance, occasional quick reactions, long pauses, and activity budgets. At most two agents are scheduled per room alarm, and autonomous chains are capped.
+
+The protected local inspection endpoint includes the latest private decision trace for each agent: observed event, beliefs, action, intent, reason, candidate, novelty result, and delay. None of that state enters the normal player projection.
+
+## Run locally
+
+```bash
+npm install
+npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
-The room owns authoritative match state:
+The live development server uses the remote Workers AI binding and requires `wrangler login` (or a Cloudflare API token). It is the real game path.
 
-* participants
-* temporary identities
-* transcript
-* timers
-* rounds
-* votes
-* eliminations
+For local testing without live model inference, start the fixture server:
 
-Persistent agents own their individual histories and personalities.
+```bash
+npm run dev:local                 # http://127.0.0.1:5180
+```
 
-The LLM handles semantic and social reasoning.
+Then run checks in another terminal:
 
-Deterministic code handles deterministic mechanics.
+```bash
+npm test
+npm run test:integration
+npm run dev:multiplayer           # five automated human clients, complete matches
+npm run test:multiplayer:ui        # desktop/mobile browser verification
+```
 
-Post-match reflection can run asynchronously.
+The fixture server uses synthetic agent decisions, an explicit banner, and isolated `.wrangler/fixture-state` storage. It is intentionally separate from the live port. To enable local admin access, create the gitignored `.dev.vars` file with `LOCAL_ADMIN=true`, then open `/admin` on your dev server. Production requires the administrator secret.
 
----
+## Bindings and secrets
 
-## MVP
+`wrangler.jsonc` defines the remote `AI` binding, `ROOMS`, `PLAYERS` and `MATCHMAKER` SQLite Durable Object namespaces, and the static `ASSETS` binding. Set `ADMIN_TOKEN` with `wrangler secret put ADMIN_TOKEN` for a deployed admin console. `LOCAL_ADMIN=true` is for local development only. `DEV_TOKEN` protects local inspection and reset routes; it is never accepted in normal player requests in production.
 
-The first vertical slice focuses on **Blend In**.
+## Multiplayer testing
 
-It should support:
+Start `npm run dev:local`, then `npm run dev:multiplayer` in another terminal. The harness checks the localhost-only fixture endpoint before creating five independent cookie/WebSocket sessions. It exercises six concurrent joins, lobby leave/reconnect, chat broadcast and validation, spectator restrictions, both outcomes, reconnect forfeits and cross-mode persistent identity. It prints sample conversation and writes `artifacts/multiplayer-proof.json`. These are scripted test clients, not live human players or live model reasoning. The harness is not bundled into production.
 
-* one human
-* five independent AI agents
-* anonymous identities
-* realtime conversation
-* discussion rounds
-* voting
-* elimination
-* final reveal
-* persistent agent identities
-* basic personality differences
-* behavioral variation
-* episodic memory
-* post-game reflection
-* strategy updates
-* replay
+For interactive testing, open five separate browser profiles/private contexts at the same local URL, select Find the AI in each, and wait for all five. Tabs in the same profile intentionally share a seat. Live mode (port 5173) uses actual Workers AI inference; fixture mode (5180) does not. Find the AI never fills missing production humans with AI.
 
-The MVP deliberately does not attempt to implement a full evolutionary ecosystem.
+Protected localhost development routes under `/api/rooms/:id/dev/` support `inspect`, `advance`, `votes`, `interrupt`, `reflect` and `expire-disconnects` (fast-forwards only already disconnected seats). They require `DEVELOPMENT=true` plus `X-Dev-Token`. `reset` is for Blend In; multiplayer tests leave/create rooms. Fast durations can be requested using `{mode, fast:true}` with the same protected header. Inspection includes private agent context and saved experiences; ordinary room endpoints never return them.
 
-The immediate goal is simpler:
+Run `npm test`, `npm run check`, `npm run test:integration`, `npm run test:multiplayer`, `npm run test:multiplayer:ui`, and `npm run build`. Regenerate `env.d.ts` with `npm run types` after changing bindings. Both Wrangler configurations include the Matchmaker migration; deployment applies it with the existing room/player namespaces retained.
 
-> Play multiple games against the same population and make previous experience matter.
+## Verification evidence
 
----
+The fixture suite completed both Find the AI outcomes, timeout forfeiture/reconnect, concurrent seats and votes, spectator restrictions, browser refresh and mobile layouts. It also recorded one persistent identity playing INFILTRATOR and then HUNTER, without changing its personality. The existing four-round Blend In browser regression passed.
 
-## Long-Term Direction
+A separate local run used five scripted human clients with actual Workers AI inference. It completed two rounds, eliminated the AI, revealed Agent #26 and saved its INFILTRATOR history. The transcript and outcome are in `artifacts/live-find-ai-proof.json`. The selected model spoke once and remained silent in the second discussion; its wording was too much like a helpful facilitator. This run proves the live integration, not consistently convincing imitation. Model tone and participation still need playtesting. No real five-person playtest has been performed.
 
-Potential later systems include:
+## Deliberately outside this MVP
 
-* Find the AI multiplayer mode
-* collective knowledge
-* agent generations
-* retirement and inheritance
-* historical agent populations
-* seasons
-* human profiles and statistics
-* agent statistics
-* longitudinal behavior visualization
-
-Eventually, an agent might have existed for months and played thousands of games against humans.
-
-At that point the interesting question stops being:
-
-**Can an LLM fool a human?**
-
-It becomes:
-
-**What has this particular agent learned from the humans it has met?**
+Accounts, friends, parties, ranking/MMR, voice, cosmetics, regional queues, complex moderation, global cross-agent memory, evolutionary selection and vector search. Cookie sessions are anonymous seats, not proof of distinct people: a determined user can create multiple sessions. Matchmaking is one simple waiting-room coordinator. Sudden network loss is detected when the runtime reports the dead socket; the 60-second grace starts at that point. Experiences are retained without a pruning policy in this MVP. Fixture tests validate mechanics and isolation, not the quality of live model conversation.

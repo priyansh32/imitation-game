@@ -1,5 +1,5 @@
 ﻿import { useEffect, useRef, useState, type FormEvent } from "react";
-import type { ClientAction, Participant, Snapshot } from "./shared";
+import type { ClientAction, Participant, Snapshot, GameMode } from "./shared";
 import { MAX_MESSAGE } from "./shared";
 
 const Arrow = () => <span aria-hidden="true">↗</span>;
@@ -21,7 +21,13 @@ function Avatar({
     </span>
   );
 }
-function Rules({ close }: { close: () => void }) {
+function Rules({
+  close,
+  mode = "FIND_THE_AI"
+}: {
+  close: () => void;
+  mode?: GameMode;
+}) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     ref.current?.showModal();
@@ -34,23 +40,30 @@ function Rules({ close }: { close: () => void }) {
         </button>
         <span className="eyebrow">THE RULES ARE SIMPLE.</span>
         <h2>
-          Being yourself
+          {mode === "FIND_THE_AI" ? "Someone here" : "Being yourself"}
           <br />
-          is a bad idea.
+          {mode === "FIND_THE_AI" ? "isn't like you." : "is a bad idea."}
         </h2>
         <ol>
           <li>
-            <strong>Six strangers. One human.</strong>
+            <strong>
+              {mode === "FIND_THE_AI"
+                ? "Five humans. One hidden AI."
+                : "Six strangers. One human."}
+            </strong>
             <p>
-              That’s you. Five independent AI players are trying to find you.
-              They don’t know who the other AI players are either.
+              {mode === "FIND_THE_AI"
+                ? "You and four other humans must identify one persistent AI player. Everyone has an anonymous identity."
+                : "That’s you. Five independent AI players are trying to find you. They don’t know who the other AI players are either."}
             </p>
           </li>
           <li>
             <strong>Talk. Question. Cast doubt.</strong>
             <p>
-              You get a new name every game. Steer suspicion toward someone
-              else.
+              You get a new name every game.{" "}
+              {mode === "FIND_THE_AI"
+                ? "Question the room. Look for a story that doesn't add up."
+                : "Steer suspicion toward someone else."}
             </p>
           </li>
           <li>
@@ -62,9 +75,15 @@ function Rules({ close }: { close: () => void }) {
             </p>
           </li>
           <li>
-            <strong>Make the final two.</strong>
+            <strong>
+              {mode === "FIND_THE_AI"
+                ? "Find it before the final two."
+                : "Make the final two."}
+            </strong>
             <p>
-              Survive four eliminations to win. If you’re caught, it’s over.
+              {mode === "FIND_THE_AI"
+                ? "Eliminate the AI before it reaches the final two. Eliminated humans can spectate. "
+                : "Survive four eliminations to win. If you’re caught, it’s over. "}
               Identities stay hidden until the final reveal.
             </p>
           </li>
@@ -81,7 +100,7 @@ function Landing({
   busy,
   error
 }: {
-  start: () => void;
+  start: (mode?: GameMode) => void;
   busy: boolean;
   error: string;
 }) {
@@ -93,7 +112,7 @@ function Landing({
         <span>
           <i className="dot" /> A GAME OF SOCIAL SURVIVAL
         </span>
-        <span>01 HUMAN · 05 IMPOSTORS</span>
+        <span>05 HUMANS · 01 AI</span>
       </div>
       <section className="hero">
         <div className="hero-copy">
@@ -101,17 +120,23 @@ function Landing({
             HUMAN<span>?</span>
           </h1>
           <p className="premise">
-            Five of them are AI.
+            Five humans. One AI.
             <br />
-            You’re the only human.
+            It’s trying to blend in.
             <br />
-            <span>Don’t let them figure it out.</span>
+            <span>Find it before it fools you.</span>
           </p>
-          <button className="primary enter" onClick={start} disabled={busy}>
-            {busy ? "FINDING YOUR SEAT" : "BLEND IN"}{" "}
+          <button
+            className="primary enter"
+            onClick={() => start("FIND_THE_AI")}
+            disabled={busy}
+          >
+            {busy ? "FINDING YOUR SEAT" : "FIND A GAME"}{" "}
             {busy ? <span className="spinner" /> : <Arrow />}
           </button>
-          <p className="entry-note">No account. No audience. Just suspicion.</p>
+          <p className="entry-note">
+            Find the AI · No account. Just suspicion.
+          </p>
           {error && (
             <p className="error" role="alert">
               {error}
@@ -147,22 +172,26 @@ function Landing({
         <div className="mode active">
           <span className="mode-index">01</span>
           <div>
-            <strong>BLEND IN</strong>
-            <p>One human against the room.</p>
+            <strong>FIND THE AI</strong>
+            <p>Five humans. One AI. Find it.</p>
           </div>
           <span className="mode-time">
             ~ 5 MIN <span className="accent">↗</span>
           </span>
         </div>
-        <div className="mode locked">
+        <div className="mode active">
           <span className="mode-index">02</span>
           <div>
-            <strong>FIND THE AI</strong>
-            <p>The tables will turn.</p>
+            <strong>BLEND IN</strong>
+            <p>You’re the only human. Don’t get caught.</p>
           </div>
-          <span className="mode-time">
-            COMING LATER <span aria-hidden="true">⊘</span>
-          </span>
+          <button
+            className="rules-button"
+            disabled={busy}
+            onClick={() => start("BLEND_IN")}
+          >
+            BLEND IN <Arrow />
+          </button>
         </div>
       </section>
       <footer className="landing-foot">
@@ -212,6 +241,8 @@ function Reveal({
         <h1>
           {!complete ? (
             "Masks off."
+          ) : state.mode === "FIND_THE_AI" ? (
+            <>{state.humanWon ? "You found it." : "It fooled the room."}</>
           ) : state.outcome === "blended" ? (
             <>
               You passed
@@ -229,9 +260,13 @@ function Reveal({
         <p>
           {!complete
             ? "Six names. Here’s who was behind them."
-            : state.outcome === "blended"
-              ? "Four votes. Five artificial minds. You made the final two."
-              : `You survived ${survived} of 4 eliminations. The room found you.`}
+            : state.mode === "FIND_THE_AI"
+              ? state.humanWon
+                ? "The humans win. One mask finally slipped."
+                : "The AI survived to the final two. A familiar stranger."
+              : state.outcome === "blended"
+                ? "Four votes. Five artificial minds. You made the final two."
+                : `You survived ${survived} of 4 eliminations. The room found you.`}
         </p>
       </div>
       <div className="reveal-roster">
@@ -250,12 +285,20 @@ function Reveal({
                   {shown
                     ? identity?.kind === "ai"
                       ? `Agent #${String(identity.agentId).padStart(2, "0")} · ${identity.games ?? 0} ${identity.games === 1 ? "game" : "games"} played`
-                      : "The one with something to lose."
+                      : p.id === state.selfId
+                        ? "Your anonymous identity."
+                        : "A human behind the mask."
                     : "Identity concealed"}
                 </small>
               </div>
               <span className="identity-type">
-                {shown ? (identity?.kind === "human" ? "YOU" : "AI") : "—"}
+                {shown
+                  ? identity?.kind === "human"
+                    ? p.id === state.selfId
+                      ? "YOU"
+                      : "HUMAN"
+                    : "AI"
+                  : "—"}
               </span>
             </div>
           );
@@ -347,7 +390,8 @@ function Match({
     if (send({ type: "message", text: text.trim(), id })) setSent(id);
   };
   const vote = () => {
-    if (selected) send({ type: "vote", target: selected, round: state.round });
+    if (selected && !self.eliminated)
+      send({ type: "vote", target: selected, round: state.round });
   };
   const label =
     state.phase === "arrival"
@@ -367,7 +411,7 @@ function Match({
       <div className="match-top">
         <div>
           <span className="eyebrow">
-            BLEND IN{" "}
+            {state.mode === "FIND_THE_AI" ? "FIND THE AI" : "BLEND IN"}{" "}
             <span className="muted">
               / ROOM {state.roomId.slice(0, 6).toUpperCase()}
             </span>
@@ -404,6 +448,7 @@ function Match({
                 className={`participant ${p.eliminated ? "out" : ""} ${selected === p.id || state.votedFor === p.id ? "selected" : ""}`}
                 disabled={
                   !voting ||
+                  self.eliminated ||
                   p.eliminated ||
                   p.id === self.id ||
                   !!state.votedFor ||
@@ -444,12 +489,20 @@ function Match({
           <div className="your-objective">
             <span className="eyebrow">YOUR ONLY JOB</span>
             <p>
-              Let someone else
-              <br />
-              look human.
+              {state.mode === "FIND_THE_AI" ? (
+                "Find the one pretending."
+              ) : (
+                <>
+                  Let someone else
+                  <br />
+                  look human.
+                </>
+              )}
             </p>
             <small>
-              Survive to the final two.
+              {state.mode === "FIND_THE_AI"
+                ? "Catch the AI before the final two."
+                : "Survive to the final two."}
               <br />
               Identities are revealed at the end.
             </small>
@@ -494,12 +547,30 @@ function Match({
             <div className="room-notice">
               <span>↳</span>
               <p>
-                You are <strong>{self.name}</strong>. They don’t know that
-                you’re human.
+                You are <strong>{self.name}</strong>.{" "}
+                {state.mode === "FIND_THE_AI"
+                  ? "One of these strangers is AI."
+                  : "They don’t know that you’re human."}
                 <br />
-                <span>Say something believable. Or don’t.</span>
+                <span>
+                  {state.mode === "FIND_THE_AI"
+                    ? "Question the room. Trust your read. Or don’t."
+                    : "Say something believable. Or don’t."}
+                </span>
               </p>
             </div>
+            {self.eliminated && (
+              <div className="room-notice">
+                <span>×</span>
+                <p>
+                  <strong>YOU WERE ELIMINATED</strong>
+                  <br />
+                  Identity remains hidden until the match ends.
+                  <br />
+                  <span>Spectating…</span>
+                </p>
+              </div>
+            )}
             {state.phase === "arrival" && (
               <div className="arrival">
                 <span className="eyebrow">A NEW NAME. A CLEAN SLATE.</span>
@@ -550,13 +621,17 @@ function Match({
                 </div>
               );
             })}
-            {voting && (
+            {voting && !self.eliminated && (
               <div className="vote-stage">
                 <span className="eyebrow">ONE VOTE. NO TAKEBACKS.</span>
                 <h2>
                   Who seems
                   <br />
-                  <em>too human?</em>
+                  <em>
+                    {state.mode === "FIND_THE_AI"
+                      ? "artificial?"
+                      : "too human?"}
+                  </em>
                 </h2>
                 <p>
                   {state.votedFor
@@ -707,6 +782,7 @@ function Match({
                 aria-label="Send message"
                 disabled={
                   !text.trim() ||
+                  self.eliminated ||
                   state.phase !== "discussion" ||
                   !connected ||
                   !!sent
@@ -758,6 +834,8 @@ export default function App() {
         const response = await fetch(`/api/rooms/${roomId}`);
         if (!response.ok) {
           const data = (await response.json()) as { error: string };
+          if (!cancelled && [403, 404].includes(response.status))
+            setState(null);
           throw new Error(data.error);
         }
         const next = (await response.json()) as Snapshot;
@@ -809,14 +887,14 @@ export default function App() {
       socket.current = null;
     };
   }, [roomId]);
-  const start = async () => {
+  const start = async (mode: GameMode = state?.mode ?? "FIND_THE_AI") => {
     setBusy(true);
     setError("");
     try {
       const response = await fetch("/api/rooms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: "{}"
+        body: JSON.stringify({ mode })
       });
       const data = (await response.json()) as {
         roomId?: string;
@@ -839,6 +917,10 @@ export default function App() {
     }
   };
   const home = () => {
+    if (state?.phase === "waiting" || state?.phase === "starting") {
+      void leave();
+      return;
+    }
     if (
       roomId &&
       state &&
@@ -852,6 +934,24 @@ export default function App() {
     setRoomId(null);
     setState(null);
     setError("");
+  };
+  const leave = async () => {
+    if (!roomId) return;
+    try {
+      const result = await fetch(`/api/rooms/${roomId}/leave`, {
+        method: "POST"
+      });
+      if (!result.ok && ![403, 404].includes(result.status)) {
+        setError("The match has already started. Your seat is ready.");
+        return;
+      }
+      localStorage.removeItem("human-room");
+      setRoomId(null);
+      setState(null);
+      setError("");
+    } catch {
+      setError("Could not leave the room. Please try again.");
+    }
   };
   const send = (action: ClientAction) => {
     if (socket.current?.readyState !== WebSocket.OPEN) {
@@ -880,13 +980,55 @@ export default function App() {
           {unavailable ? (
             <>
               <p role="alert">{error}</p>
-              <button className="primary" onClick={start} disabled={busy}>
+              <button
+                className="primary"
+                onClick={() => void start()}
+                disabled={busy}
+              >
                 START A FRESH MATCH <Arrow />
               </button>
             </>
           ) : (
             <span className="spinner" />
           )}
+        </main>
+      ) : state.phase === "waiting" || state.phase === "starting" ? (
+        <main className="loading lobby">
+          <span className="eyebrow">
+            FIND THE AI / ROOM {state.roomId.slice(0, 6).toUpperCase()}
+          </span>
+          <h1>
+            {state.phase === "starting"
+              ? "The room is ready."
+              : "Finding humans…"}
+          </h1>
+          <p>Five humans. One hidden AI. Six strangers when the doors close.</p>
+          <div
+            className="joining-seats"
+            aria-label={`${state.lobby?.joined ?? 0} of 5 players connected`}
+          >
+            {[0, 1, 2, 3, 4].map((i) => (
+              <span
+                key={i}
+                className={i < (state.lobby?.joined ?? 0) ? "filled" : ""}
+              >
+                ●
+              </span>
+            ))}
+          </div>
+          <strong>{state.lobby?.joined ?? 0} / 5 PLAYERS JOINED</strong>
+          <p>
+            <i className={`dot ${connected ? "" : "offline"}`} />{" "}
+            {connected
+              ? "Connected · Your identity is assigned when the match begins."
+              : "Reconnecting…"}
+          </p>
+          {(error || state.serviceNotice) && (
+            <p role="alert">{error || state.serviceNotice}</p>
+          )}
+          <button className="rules-button" onClick={() => void leave()}>
+            LEAVE LOBBY ↗
+          </button>
         </main>
       ) : state.phase === "interrupted" ? (
         <main className="loading">
@@ -902,7 +1044,12 @@ export default function App() {
         </main>
       ) : state.phase === "reveal" ? (
         <>
-          <Reveal key={roomId} state={state} play={start} busy={busy} />
+          <Reveal
+            key={roomId}
+            state={state}
+            play={() => void start()}
+            busy={busy}
+          />
           {error && (
             <p className="reveal-error" role="alert">
               {error}
@@ -918,7 +1065,7 @@ export default function App() {
           error={error}
         />
       )}
-      {rules && <Rules close={() => setRules(false)} />}
+      {rules && <Rules mode={state?.mode} close={() => setRules(false)} />}
     </>
   );
 }

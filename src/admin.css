@@ -1,0 +1,246 @@
+.admin-shell {
+  min-height: 100vh;
+  background: #11120f;
+  color: #f3f1e8;
+  padding: 42px clamp(18px, 5vw, 72px);
+  font-family: Inter, ui-sans-serif, sans-serif;
+}
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-start;
+  margin-bottom: 34px;
+}
+.admin-header a {
+  color: #b8c98a;
+  text-decoration: none;
+  font-size: 13px;
+}
+.admin-kicker,
+.section-label,
+.agent-label {
+  color: #a8bd70;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 11px;
+}
+.admin-shell h1 {
+  font-size: clamp(32px, 5vw, 64px);
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+  margin: 12px 0;
+}
+.admin-shell h2 {
+  font-size: 30px;
+  letter-spacing: -0.04em;
+  margin: 8px 0;
+}
+.admin-shell p {
+  color: #a9aaa0;
+}
+.admin-grid {
+  display: grid;
+  grid-template-columns: minmax(270px, 360px) 1fr;
+  gap: 18px;
+  max-width: 1200px;
+}
+.agent-list,
+.agent-detail,
+.meter-card,
+.memory-block {
+  border: 1px solid #2a2d27;
+  background: #171914;
+}
+.list-tools,
+.detail-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 16px 18px;
+  border-bottom: 1px solid #2a2d27;
+}
+.list-tools select,
+.model-control select {
+  background: #11120f;
+  color: #deded5;
+  border: 1px solid #363a31;
+  padding: 8px;
+  font: inherit;
+}
+.agent-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 58px 1fr auto;
+  gap: 10px;
+  text-align: left;
+  align-items: center;
+  padding: 14px 16px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #242720;
+  color: #deded5;
+  cursor: pointer;
+}
+.agent-row:hover,
+.agent-row.active {
+  background: #22271d;
+}
+.agent-row small,
+.agent-row em {
+  display: block;
+  color: #898d81;
+  font-size: 11px;
+  font-style: normal;
+  margin-top: 4px;
+}
+.agent-mark {
+  color: #a8bd70;
+  font-family: ui-monospace, monospace;
+}
+.agent-detail {
+  padding-bottom: 24px;
+}
+.detail-top {
+  align-items: flex-start;
+}
+.quiet-button,
+.admin-login button {
+  background: #b8d276;
+  border: 0;
+  color: #15170f;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.model-control {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 18px;
+  color: #a9aaa0;
+  font-size: 12px;
+}
+.model-control select {
+  width: 100%;
+  font-size: 14px;
+}
+.inference {
+  margin: 0 18px 18px;
+  padding: 10px 12px;
+  border-left: 3px solid #a8bd70;
+  background: #20241b;
+}
+.inference.error {
+  border-color: #d77662;
+}
+.inference span {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+.inference small {
+  display: block;
+  color: #a9aaa0;
+  margin-top: 3px;
+}
+.meter-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 0 18px;
+}
+.meter-card {
+  padding: 16px;
+}
+.meter {
+  margin-top: 14px;
+}
+.meter > div {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #bfc1b7;
+}
+.meter b {
+  color: #d9e2bd;
+  font-weight: 500;
+}
+.meter i {
+  display: block;
+  height: 4px;
+  background: #2c3028;
+  margin-top: 6px;
+}
+.meter u {
+  display: block;
+  height: 100%;
+  background: #a8bd70;
+  text-decoration: none;
+}
+.memory-block {
+  margin: 18px;
+  padding: 18px;
+}
+.memory {
+  border-top: 1px solid #2a2d27;
+  padding: 13px 0;
+}
+.memory time,
+.memory small,
+.muted {
+  color: #777c70;
+  font-size: 11px;
+}
+.memory p {
+  margin: 7px 0;
+  color: #dadbd1;
+  font-size: 14px;
+}
+.admin-login {
+  max-width: 520px;
+  margin: auto;
+  padding-top: 15vh;
+}
+.admin-login form {
+  display: flex;
+  gap: 8px;
+  margin-top: 24px;
+}
+.admin-login input {
+  flex: 1;
+  background: #171914;
+  border: 1px solid #383c33;
+  color: #fff;
+  padding: 12px;
+}
+.admin-error {
+  color: #e28a72 !important;
+  margin: 14px 0;
+}
+.admin-login button:disabled,
+.quiet-button:disabled {
+  opacity: 0.5;
+}
+@media (max-width: 760px) {
+  .admin-shell {
+    padding: 26px 14px;
+  }
+  .admin-header {
+    display: block;
+  }
+  .admin-header a {
+    display: inline-block;
+    margin-top: 16px;
+  }
+  .admin-grid {
+    grid-template-columns: 1fr;
+  }
+  .meter-grid {
+    grid-template-columns: 1fr;
+  }
+  .agent-row {
+    grid-template-columns: 54px 1fr auto;
+  }
+}

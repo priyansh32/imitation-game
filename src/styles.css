@@ -1574,6 +1574,19 @@ dialog::backdrop {
     font-size: 45px;
   }
 }
+.fixture-banner {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #7b5b28;
+  color: #fff3d5;
+  text-align: center;
+  padding: 7px 12px;
+  font:
+    11px/1.2 ui-monospace,
+    monospace;
+  letter-spacing: 0.06em;
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -1598,6 +1611,27 @@ dialog::backdrop {
 }
 .inline-error {
   display: block;
+}
+.joining-seats {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin: 28px 0 18px;
+  font-size: 30px;
+  color: #35392d;
+}
+.joining-seats .filled {
+  color: var(--accent, #c0e976);
+  transition: color 180ms;
+}
+.lobby > strong {
+  font:
+    12px ui-monospace,
+    monospace;
+  letter-spacing: 0.14em;
+}
+.lobby .rules-button {
+  margin-top: 22px;
 }
 @media (max-width: 700px) {
   .hero {

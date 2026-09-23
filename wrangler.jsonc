@@ -1,62 +1,72 @@
-﻿{
-    "$schema":  "node_modules/wrangler/config-schema.json",
-    "name":  "imitation-game",
-    "main":  "src/server.ts",
-    "compatibility_date":  "2026-06-11",
-    "compatibility_flags":  [
-                                "nodejs_compat"
-                            ],
-    "ai":  {
-               "binding":  "AI",
-               "remote":  true
-           },
-    "vars":  {
-                 "DEVELOPMENT":  "false",
-                 "DEV_TOKEN":  "",
-                 "ADMIN_TOKEN":  "",
-                 "LOCAL_ADMIN":  "false"
-             },
-    "assets":  {
-                   "directory":  "./public",
-                   "binding":  "ASSETS",
-                   "not_found_handling":  "single-page-application",
-                   "run_worker_first":  [
-                                            "/api/*",
-                                            "/agents/*"
-                                        ]
-               },
-    "durable_objects":  {
-                            "bindings":  [
-                                             {
-                                                 "class_name":  "GameRoom",
-                                                 "name":  "ROOMS"
-                                             },
-                                             {
-                                                 "class_name":  "PersistentPlayer",
-                                                 "name":  "PLAYERS"
-                                             }
-                                         ]
-                        },
-    "migrations":  [
-                       {
-                           "tag":  "v1",
-                           "new_sqlite_classes":  [
-                                                      "ChatAgent"
-                                                  ]
-                       },
-                       {
-                           "tag":  "v2",
-                           "new_sqlite_classes":  [
-                                                      "GameRoom",
-                                                      "PersistentPlayer"
-                                                  ],
-                           "deleted_classes":  [
-                                                   "ChatAgent"
-                                               ]
-                       }
-                   ],
-    "observability":  {
-                          "enabled":  true
-                      },
-    "upload_source_maps":  true
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "imitation-game",
+  "main": "src/server.ts",
+  "compatibility_date": "2026-06-11",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "ai": {
+    "binding": "AI",
+    "remote": true
+  },
+  "vars": {
+    "DEVELOPMENT": "false",
+    "DEV_TOKEN": "",
+    "ADMIN_TOKEN": "",
+    "LOCAL_ADMIN": "false"
+  },
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": [
+      "/api/*",
+      "/agents/*"
+    ]
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "GameRoom",
+        "name": "ROOMS"
+      },
+      {
+        "class_name": "PersistentPlayer",
+        "name": "PLAYERS"
+      },
+      {
+        "name": "MATCHMAKER",
+        "class_name": "Matchmaker"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "ChatAgent"
+      ]
+    },
+    {
+      "tag": "v2",
+      "new_sqlite_classes": [
+        "GameRoom",
+        "PersistentPlayer"
+      ],
+      "deleted_classes": [
+        "ChatAgent"
+      ]
+    },
+    {
+      "tag": "v3-matchmaker",
+      "new_sqlite_classes": [
+        "Matchmaker"
+      ]
+    }
+  ],
+  "observability": {
+    "enabled": true
+  },
+  "upload_source_maps": true
 }
