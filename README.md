@@ -4,6 +4,8 @@ HUMAN? is an anonymous social deduction game. **Find the AI** is the primary mod
 
 Both modes use the same game engine and persistent agent population. The server owns hidden identities and game mechanics; browsers receive only public room events and their own seat/vote.
 
+Each match draws six distinct anonymous names from a shared pool of 80 two-word handles, such as `velvet_moth`, `cold_pizza` and `tiny_riot`. Names are assigned independently of participant type and persistent identity.
+
 ## Architecture
 
 - `src/server.ts` is the Worker entrypoint. It validates origins and room ownership, routes WebSocket traffic, and exposes protected local test controls and the admin API.

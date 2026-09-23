@@ -104,7 +104,14 @@ function Landing({
   busy: boolean;
   error: string;
 }) {
-  const names = ["chair", "pigeon", "diesel", "rajma", "helmet", "you?"];
+  const names = [
+    "velvet_moth",
+    "cold_pizza",
+    "tiny_riot",
+    "ghost_toast",
+    "moon_pickle",
+    "wet_sock"
+  ];
   const symbols = ["◒", "✳", "▥", "◈", "▰", "⌁"];
   return (
     <main className="landing">

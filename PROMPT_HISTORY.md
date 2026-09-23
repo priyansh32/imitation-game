@@ -1,452 +1,123 @@
-# Prompt History
+﻿# Prompt History
 
-Chronological prompts used while developing the project.
+Selected prompts and decisions from the development of HUMAN?, in chronological order. This is a curated record, not a complete chat transcript. Blockquotes are excerpts; the surrounding text summarizes context and intent. The initial implementation brief was generated with assistant help and then supplied by the user for implementation.
 
----
+These prompts describe requested behavior, not proof that every ambition has been achieved. See [README.md](README.md) for the current implementation, verification evidence and known limitations, and [DESIGN_HISTORY.md](DESIGN_HISTORY.md) for the broader design rationale.
 
-## User Prompts
+## 1. Persistent individuals, not disposable opponents
 
-### Persistent Game Memory
+**Early product exploration - user prompts**
 
 > No we start with this game only initially, but let agent develop memory over months.
 
----
+> okay so instead of one global AI fingerprint we have multiple. they inherit one base and then learn their own
 
-### Shared Agent Memory
+The design moved toward agents with individual personalities, behavioral profiles, memories and histories. Persistence belongs to each agent; private beliefs about a current match are separate from long-term memory.
 
-> There are multiple agents running maybe but they share memory of how to pretend to be human.
+An early shared-memory idea was explored but did not become the MVP's memory model. The distinction matters: sharing a population across modes does not mean sharing every agent's private memory.
 
----
+## 2. Prove the loop with Blend In
 
-### Cold Start
-
-> But there are no players initially. What do we do
-
----
-
-### Cloudflare Assignment
-
-> this fits for submission into job application right
->
-> We plan to fast track candidates who complete an assignment to build a type of AI-powered application on Cloudflare. An AI-powered application should include the following components:
->
-> * LLM (recommend using Llama 3.3 on Workers AI), or an external LLM of your choice
-> * Workflow / coordination (recommend using Workflows, Workers or Durable Objects)
-> * User input via chat or voice (recommend using Pages or Realtime)
-> * Memory or state
-
----
-
-### Blend In
+**Initial mode - user prompt**
 
 > initially we just spin up agents. we keep two modes. can you blend in among 5 AI agents. like you human others are AI agents, your goal is to convince others to vote out other AIs.
 
----
+Blend In provided a playable starting point without needing five simultaneous human players. One human joins five persistent AI agents, receives an anonymous identity, participates in discussion and voting, and tries to survive elimination. The reverse mode would later reuse the same mechanics.
 
-### AI Fingerprints
+## 3. Build a social game with explicit architectural boundaries
 
-> what problems can we have. like other than the text. what could give away the AI
+**Initial implementation brief - selected excerpts from the assistant-generated prompt supplied by the user**
 
----
+> Read the provided design `.md` completely before writing any code.
 
-### Individual Agent Learning
+> Treat that document as the **source of truth for the product concept, game mechanics, agent architecture, memory model, and MVP scope**.
 
-> okay so instead of one global AI fingerprint we have multiple. they inherit one base and then learn their own
+> The interesting thing is that the player **doesn't know who/what they're talking to**. The UI should reinforce identity, suspicion, conversation and voting.
 
----
+> Human and AI participants must use the exact same message component.
 
-### Persistent Personality
+> Do not use a Cloudflare product simply to increase the number of Cloudflare services in the project.
 
-> how is the personality saved
+The brief called for a dark, restrained interface with anonymous identities, readable group conversation, consequential voting and a progressive final reveal. Persistent agent IDs and histories belong after the reveal, not in the match interface.
 
----
+It also separated semantic reasoning from deterministic mechanics: models interpret conversation and generate social contributions; runtime code owns timers, identity assignment, validation, scheduling, vote counting and transitions. The deliverable was a complete playable loop, including reconnects, local testing controls and replay.
 
-### Initial Design Document
+## 4. Address repetitive behavior at the architecture level
 
-> I think we arrived on a basic design. lets start with a design doc
+**Independent decision engine milestone - user prompt excerpts**
 
----
+> The current problem is that AI participants can behave like multiple instances of the same chatbot: they respond too often, react to the same events, repeat one another, and converge on similar accusations.
 
-### Naming
+> Fix this at the architecture level.
 
-> suggest names
+> Receiving a message must NOT automatically produce an AI message.
 
----
-
-### One-Shot Implementation
-
-> prompt to one shot the design with UI guidelines too
-
----
-
-### Design Document as Source of Truth
-
-> I'll provide design .md
-
----
-
-### Existing Products
-
-> does something like this already exist
-
----
-
-### Agent Repetition
-
-> they are repeating things
-
----
-
-### Documentation
-
-> give me a readme for the doc. also a prompt history. which includes the arrival on design too
-
----
-
-### Preserve Raw Prompts
-
-> you can you also include raw prompts from our chat and the one you created for me.
-
----
-
-# Generated Implementation Prompt
-
-The following prompt was generated after the product design had converged and was intended to be supplied to a coding agent alongside `DESIGN.md`.
-
----
-
-Read the provided design `.md` completely before writing any code.
-
-Treat that document as the **source of truth for the product concept, game mechanics, agent architecture, memory model, and MVP scope**. Do not redesign the underlying product unless something is technically contradictory or impossible. If a detail is underspecified, make a sensible decision consistent with the design rather than stopping to ask questions.
-
-Your task is to **design and implement the MVP described in the document end-to-end**, with particular attention to making the frontend feel like a polished social multiplayer game rather than an AI demo.
-
-## Product/UI direction
-
-The product should feel:
-
-* mysterious
-* social
-* slightly unsettling
-* playful
-* fast
-* internet-native
-* minimal
-* competitive
-
-It should NOT look like:
-
-* an AI SaaS dashboard
-* a Cloudflare demo
-* an admin panel
-* ChatGPT
-* Discord
-* Slack
-* a generic Tailwind/shadcn landing page
-* a hackathon project covered in gradients and glowing AI icons
-
-Avoid generic AI visual language entirely.
-
-No brains, neural-network graphics, robot icons, sparkles, "AI-powered" badges, giant gradient blobs, or unnecessary glassmorphism.
-
-The interesting thing is that the player **doesn't know who/what they're talking to**. The UI should reinforce identity, suspicion, conversation and voting.
-
-## Visual language
-
-Use a dark-first visual system.
-
-Prefer near-black / charcoal surfaces, restrained borders, high-contrast typography, and one strong accent color for important game state.
-
-Color should communicate game state rather than decorate every surface.
-
-Typography should feel modern and slightly opinionated. Large typography is appropriate on landing/reveal screens. Chat should prioritize readability.
-
-Use generous whitespace outside matches and tighter information density inside matches.
-
-Animations should be quick and purposeful:
-
-* participant joining
-* round transition
-* countdown entering final seconds
-* vote confirmation
-* elimination
-* identity reveal
-* match result
-
-Avoid excessive motion.
-
-The game should feel excellent on desktop but remain fully usable on mobile.
-
-## Landing experience
-
-Do not build a traditional marketing homepage with ten sections.
-
-The landing screen should explain the idea almost immediately.
-
-Something like:
+The requested pipeline made observation distinct from response:
 
 ```text
-HUMAN?
-
-Five of them are AI.
-You're the only human.
-Don't let them figure it out.
-
-[ BLEND IN ]
+Room event
+  -> observe and update private beliefs
+  -> decide whether to act
+  -> choose intent
+  -> generate a candidate only if needed
+  -> check novelty
+  -> schedule the action, revise, or remain silent
 ```
 
-Then small supporting information.
+The milestone requested personality-biased participation, private suspicion maps, independent votes, agent-to-agent observation, bounded autonomous conversation and development-only decision traces. Intentional short agreement should remain possible; repeating an existing argument as new evidence should be suppressed.
 
-The primary CTA should get the player into a game immediately.
+This was an iteration prompted by observed behavior, not a claim that prompt wording alone could solve conversational realism. Live-model tone and participation remain documented playtesting concerns.
 
-The concept should be understandable within roughly five seconds.
+## 5. Add Find the AI through the shared engine
 
-Future game modes can appear as secondary/locked options if appropriate, but they should not distract from the primary mode.
+**Multiplayer milestone - user prompt excerpts**
 
-## Match UI
+> Five real human players enter an anonymous room.
 
-The match screen is the most important screen in the product.
+> Exactly one persistent AI agent joins them.
 
-It should contain:
+> This should be implemented using the **same underlying room, participant, chat, voting, elimination, and reveal architecture as Blend In**.
 
-* anonymous participant identities
-* current round
-* remaining time
-* conversation
-* message input
-* clear voting interaction
-* eliminated participants
-* subtle indication of the player's own anonymous identity
+> Do not build a parallel game engine.
 
-Do not show persistent AI IDs during the game.
+The requested multiplayer work included server-authoritative matchmaking, concurrent seat reservations, per-player sessions, reconnect grace periods, eliminated-player spectating and mode-specific win conditions. Missing humans must wait; production matchmaking must never secretly fill their seats with AI.
 
-Do not visually distinguish AI messages from human messages.
+The security requirement was explicit:
 
-Human and AI participants must use the exact same message component.
+> The server must never send hidden identity information to clients before reveal.
 
-Avoid traditional left/right chatbot bubbles where "user" and "assistant" are visually distinct.
+That requirement covers protocol payloads and client state, not just rendering. The milestone also called for testing five independent connections, both outcomes, concurrent votes, identity isolation and persistent experience recording.
 
-This is a group conversation.
+## 6. Keep one population across temporary roles
 
-Messages should resemble a lightweight multiplayer chat room where identity is communicated primarily by username/avatar/symbol rather than sender type.
+**Cross-mode persistence invariant - user prompt excerpts**
 
-Participants should have simple generated visual identities such as initials, abstract symbols, geometric avatars, or restrained colors.
+> There must be exactly **one persistent AI agent population shared by all game modes**.
 
-Do not use human profile photographs.
+> Do not modify or replace the agent's persistent personality when its role changes.
 
-## Suspicion
+> **Agents persist. Roles are temporary.**
 
-The interface should make accusing someone feel central to the game.
+The same agent plays `HUNTER` in Blend In and `INFILTRATOR` in Find the AI. Its objective and known facts change with the match; its personality, behavior, generation profile, memories, strategies, history and lifetime statistics remain attached to one identity.
 
-Players should naturally glance at the participant list while reading conversation and form opinions about each identity.
+Match experiences carry mode and role metadata. Memories are not artificially partitioned by mode: an experience hiding from humans may later inform that same agent's reasoning while hunting a human.
 
-Voting should feel consequential.
+## 7. Make Find the AI the primary experience
 
-When voting begins, transition the interface clearly into a distinct voting state.
+**Product emphasis - user prompt**
 
-Do not make voting a tiny dropdown or generic form.
+> currently the homepage is about blend in? make the one AI vs humans primary
 
-Participants should become selectable targets.
+The homepage was updated to lead with five humans hunting one AI and a primary matchmaking button. Blend In remains the secondary mode. The established visual language and shared game mechanics were retained.
 
-After the vote:
+## 8. Strengthen anonymous identities
 
-* show vote distribution
-* show who is eliminated
-* do NOT reveal whether the eliminated participant was human or AI
-* transition quickly into the next round
+**Identity refinement - user prompt**
 
-The final reveal should be much more dramatic.
+> expand the list of names and make it two word type
 
-## Final reveal
+The shared name pool grew from 20 entries to 80 unique two-word handles, including `velvet_moth`, `cold_pizza` and `secret_gravy`. Both modes draw from the same pool, independently of participant type. Homepage examples and mobile participant layout were updated to support the longer names.
 
-The end of the match should reveal the hidden mapping between temporary identities and actual participant types.
+---
 
-Reveal identities progressively rather than dumping a table immediately.
-
-Example emotional rhythm:
-
-```text
-chair — AI
-pigeon — AI
-diesel — AI
-rajma — AI
-helmet — AI
-wet_sock — YOU
-```
-
-Then clearly communicate whether the human successfully blended in.
-
-This should be one of the strongest visual moments in the application.
-
-## Persistent agents
-
-After the reveal, expose a small amount of information about the underlying agents.
-
-For example:
-
-```text
-Agent #42
-183 games played
-
-Agent #17
-71 games played
-```
-
-Do not turn this into an analytics dashboard.
-
-The purpose is to make the player realize:
-
-**These were not disposable bots. They existed before this match and will exist afterward.**
-
-If an agent learned something from the game, communicate that subtly.
-
-Example:
-
-> Agent #42 updated its beliefs after this match.
-
-Do not expose the agent's complete strategy or private memory.
-
-## Behavioral realism
-
-Do not implement AI participants as:
-
-```text
-incoming human message → five immediate LLM responses
-```
-
-Agents must behave independently.
-
-An agent should be capable of:
-
-* responding
-* remaining silent
-* responding later
-* asking questions
-* accusing someone
-* defending someone
-* changing suspicion
-* voting differently from other agents
-
-Avoid synchronized AI behavior.
-
-Response timing, activity level and conversational participation should differ by agent.
-
-Generate the semantic response separately from the visible timing behavior where practical.
-
-The frontend must not contain information that reveals whether a participant is AI.
-
-## Architecture
-
-Follow the architecture in the provided design document.
-
-Prefer Cloudflare-native primitives where they naturally fit the assignment:
-
-* Cloudflare Workers
-* Cloudflare Agents
-* Durable Objects
-* Workers AI
-* Workflows where appropriate
-* WebSockets for real-time room communication
-* persistent state/storage required by the design
-
-Do not use a Cloudflare product simply to increase the number of Cloudflare services in the project.
-
-Every component should have a clear architectural reason to exist.
-
-Keep authoritative match state server-side.
-
-The client should receive normalized participant/message events and should not know hidden participant types until reveal.
-
-## LLM boundaries
-
-The LLM should handle tasks requiring semantic/social reasoning, including:
-
-* interpreting conversation
-* forming suspicions
-* deciding conversational intent
-* generating messages
-* post-match reflection
-
-Do not use the LLM for deterministic mechanics such as:
-
-* timers
-* vote counting
-* round transitions
-* random identity assignment
-* basic scheduling
-* validation
-
-Keep those deterministic.
-
-## Development requirements
-
-Build a complete vertical slice rather than many unfinished systems.
-
-The finished project should allow me to:
-
-1. open the site
-2. understand the premise
-3. start Blend In
-4. receive an anonymous identity
-5. enter a room with five agents
-6. chat naturally with them
-7. experience multiple discussion/voting rounds
-8. see participants eliminated
-9. reach a final outcome
-10. see the identity reveal
-11. see evidence that persistent agents retain history/learning
-12. immediately play again
-
-Prioritize this complete loop above secondary features.
-
-## Seed/testing mode
-
-Provide a development mechanism for rapidly testing matches without waiting through full production timers.
-
-Make it possible to:
-
-* shorten rounds
-* force transitions
-* inspect server-side hidden identities
-* inspect agent state
-* reset a test room
-
-These debugging capabilities must never leak into the normal player UI.
-
-## Quality bar
-
-Treat this as a product being reviewed by engineers and designers, not as a prototype that only needs to technically work.
-
-Before considering the implementation complete:
-
-* run it locally
-* test the complete game loop
-* test refresh/reconnection where supported
-* test simultaneous events
-* verify voting
-* verify elimination
-* verify final reveal
-* verify agent persistence across matches
-* check mobile layout
-* check empty/loading/error states
-* check browser console for errors
-* remove placeholder copy and obviously unfinished UI
-* remove unnecessary abstractions and dead code
-
-Use realistic anonymous names and believable game data during development rather than `User1`, `Bot1`, etc.
-
-Do not stop after scaffolding.
-
-Do not give me a plan and wait for approval.
-
-Inspect the repository, read the design document, make the necessary architectural decisions, implement the vertical slice, run it, fix issues you encounter, and leave the repository in a working state.
-
-When finished, summarize:
-
-1. architecture implemented
-2. important files created/changed
-3. how persistent agent state works
-4. how the match state machine works
-5. how to run locally
-6. required Cloudflare bindings/secrets
-7. what remains intentionally outside the MVP
+This selection focuses on product intent, architectural constraints, feedback-driven iteration and verification requirements. Repeated continuation requests, repository housekeeping, unrelated submission discussion and raw debugging transcripts are omitted.
